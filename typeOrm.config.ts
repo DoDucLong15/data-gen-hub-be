@@ -2,7 +2,7 @@ import { config } from 'dotenv';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import * as fs from 'fs';
-import { configuration } from 'src/config/configuration';
+import { configuration } from './src/config/configuration';
 
 const VALID_ENV = ['local', 'development', 'production'];
 const environment = process.env.NODE_ENV ?? 'local';
@@ -22,5 +22,5 @@ export default new DataSource({
   database: configService.get('database.db'),
   ssl: false,
   entities: ['src/**/entities/*.ts'],
-  migrations: [],
+  migrations: ['./migrations/1740824611750-UpdateColumnSchoolInUserEntity.ts'],
 });
