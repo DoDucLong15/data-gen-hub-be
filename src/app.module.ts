@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { configuration } from './config/configuration';
 import { LogsMiddleware } from './base/middlewares/logs.middleware';
 import { StorageModule } from './storage/storage.module';
+import { MailerModule } from './mailer/mailer.module';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -21,7 +22,8 @@ const environment = process.env.NODE_ENV ?? 'local';
       load: [configuration],
     }),
     DatabaseModule,
-    StorageModule
+    StorageModule,
+    MailerModule
   ],
   controllers: [AppController],
   providers: [AppService],
