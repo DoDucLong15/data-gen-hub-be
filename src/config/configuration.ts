@@ -15,4 +15,8 @@ export const configuration = () => ({
     googleMailerRefreshToken: process.env.GOOGLE_MAILER_REFRESH_TOKEN,
     googleMailerAccessToken: process.env.GOOGLE_MAILER_ACCESS_TOKEN,
   },
+  auth: {
+    jwtAccessSecret: process.env.JWT_ACCESS_SECRET,
+    jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
+  },
 });

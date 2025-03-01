@@ -8,6 +8,7 @@ import { LogsMiddleware } from './base/middlewares/logs.middleware';
 import { StorageModule } from './storage/storage.module';
 import { MailerModule } from './mailer/mailer.module';
 import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -25,7 +26,8 @@ const environment = process.env.NODE_ENV ?? 'local';
     DatabaseModule,
     StorageModule,
     MailerModule,
-    UsersModule
+    UsersModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [AppService],
