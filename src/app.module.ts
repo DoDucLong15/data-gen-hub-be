@@ -9,6 +9,8 @@ import { StorageModule } from './storage/storage.module';
 import { MailerModule } from './mailer/mailer.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { SystemConfigurationModule } from './system-configuration/system-configuration.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -27,7 +29,13 @@ const environment = process.env.NODE_ENV ?? 'local';
     StorageModule,
     MailerModule,
     UsersModule,
-    AuthModule
+    AuthModule,
+    SystemConfigurationModule,
+    EventEmitterModule.forRoot({
+      global: true,
+      wildcard: true,
+      maxListeners: 20,
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],
