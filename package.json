@@ -1,8 +1,8 @@
 {
-  "name": "task-be",
+  "name": "data-gen-hub-be",
   "version": "0.0.1",
   "description": "",
-  "author": "",
+  "author": "ddlong07",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -25,10 +25,12 @@
     "typeorm:run-migrations": "npm run typeorm migration:run -- -d ./typeOrm.config.ts",
     "typeorm:generate-migration": "npm run typeorm -- -d ./typeOrm.config.ts migration:generate ./migrations/%npm_config_name%",
     "typeorm:create-migration": "npm run typeorm -- migration:create ./migrations/%npm_config_name%",
-    "typeorm:revert-migration": "npm run typeorm -- -d ./typeOrm.config.ts migration:revert"
+    "typeorm:revert-migration": "npm run typeorm -- -d ./typeOrm.config.ts migration:revert",
+    "typeorm:seed-create": "npm run typeorm -- migration:create src/database/seeds/%npm_config_name%"
   },
   "lint-staged": {
     "*.{js,ts,json}": [
+      "npm run lint",
       "npm run format",
       "git add ."
     ]
