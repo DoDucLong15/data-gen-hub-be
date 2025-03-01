@@ -1,21 +1,16 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { setupSwagger } from './config/swagger.config';
+import { initFirebaseAdmin } from './config/firebase.config';
 
 export function setup(app: INestApplication): INestApplication {
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.enableCors({
     credentials: true,
     exposedHeaders: ['Authorization'],
   });
-
-  const config = new DocumentBuilder()
-    .setTitle('Task-system api')
-    .setDescription('The task-system API description')
-    .addBearerAuth()
-    .setVersion('1.0')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  initFirebaseAdmin();
+  setupSwagger(app);
 
   return app;
 }

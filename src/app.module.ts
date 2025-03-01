@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { ConfigModule } from '@nestjs/config';
 import { configuration } from './config/configuration';
+import { LogsMiddleware } from './base/middlewares/logs.middleware';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -23,4 +24,8 @@ const environment = process.env.NODE_ENV ?? 'local';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(LogsMiddleware).forRoutes('*');
+  }
+}

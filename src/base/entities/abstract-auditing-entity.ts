@@ -2,13 +2,14 @@ import { Exclude } from 'class-transformer';
 import {
   CreateDateColumn,
   DeleteDateColumn,
+  PrimaryColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 export abstract class AbstractAuditingEntity {
-  @PrimaryGeneratedColumn('increment')
-  id: number;
+  @PrimaryColumn('uuid')
+  id: string;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at', default: () => 'CURRENT_TIMESTAMP()' })
   @Exclude({ toPlainOnly: true })
