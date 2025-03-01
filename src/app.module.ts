@@ -5,6 +5,7 @@ import { DatabaseModule } from './database/database.module';
 import { ConfigModule } from '@nestjs/config';
 import { configuration } from './config/configuration';
 import { LogsMiddleware } from './base/middlewares/logs.middleware';
+import { StorageModule } from './storage/storage.module';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -19,7 +20,8 @@ const environment = process.env.NODE_ENV ?? 'local';
       isGlobal: true,
       load: [configuration],
     }),
-    DatabaseModule
+    DatabaseModule,
+    StorageModule
   ],
   controllers: [AppController],
   providers: [AppService],
