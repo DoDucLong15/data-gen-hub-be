@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Delete, Get, Param, Post, Put, Query, UseGuards, UseInterceptors } from '@nestjs/common';
 import { SystemConfigurationService } from './system-configuration.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
@@ -14,6 +14,7 @@ import { BaseResponse } from 'src/base/types/response.type';
 @Controller('system-configuration')
 @UseGuards(AccessTokenGuard, RolesGuard)
 @Roles(RoleTypes.ADMIN)
+@UseInterceptors(ClassSerializerInterceptor)
 export class SystemConfigurationController {
   constructor(private readonly systemConfigurationService: SystemConfigurationService) {}
 

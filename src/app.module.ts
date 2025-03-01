@@ -11,6 +11,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { SystemConfigurationModule } from './system-configuration/system-configuration.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ClassModule } from './class/class.module';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -36,6 +37,7 @@ const environment = process.env.NODE_ENV ?? 'local';
       wildcard: true,
       maxListeners: 20,
     }),
+    ClassModule,
   ],
   controllers: [AppController],
   providers: [AppService],
