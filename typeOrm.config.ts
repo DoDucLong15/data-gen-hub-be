@@ -22,5 +22,5 @@ export default new DataSource({
   database: configService.get('database.db'),
   ssl: false,
   entities: ['src/**/entities/*.ts'],
-  migrations: ['./migrations/1740824611750-UpdateColumnSchoolInUserEntity.ts'],
+  migrations: ['./migrations/1740837914999-CreateSystemConfigTable.ts'],
 });
