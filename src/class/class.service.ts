@@ -1,10 +1,13 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClassEntity } from './entities/class.entity';
 import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
 import { UsersService } from 'src/users/users.service';
 import { CreateClassDto, UpdateClassDto } from './dtos/class.dto';
 import { UserPayload } from 'src/auth/types/user-playload.type';
+import { TemplateSpecificationService } from 'src/template-specification/template-specification.service';
+import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.util';
+import { TemplateSpecificationEntity } from 'src/template-specification/entities/template-specification.entity';
 
 @Injectable()
 export class ClassService {
@@ -12,6 +15,7 @@ export class ClassService {
     @InjectRepository(ClassEntity)
     private readonly repository: Repository<ClassEntity>,
     private readonly usersService: UsersService,
+    private readonly templateSpecificationService: TemplateSpecificationService,
   ) {}
 
   async create(request: CreateClassDto, user: UserPayload): Promise<ClassEntity> {
@@ -21,10 +25,33 @@ export class ClassService {
     if (!teacher) {
       throw new BadRequestException(`Teacher with email ${user.email} not found`);
     }
-    return await this.repository.save({
+    const newClass = await this.repository.save({
       ...request,
       teacher,
     });
+    if (
+      SystemConfigUtils.defaultTemplateSpecification &&
+      SystemConfigUtils.defaultListTemplateFilePaths
+    ) {
+      this.templateSpecificationService
+        ._save(
+          SystemConfigUtils.defaultTemplateSpecification.map((template) => {
+            const { id, ...restTemplate } = template;
+            return {
+              ...restTemplate,
+              class: newClass,
+            } as TemplateSpecificationEntity;
+          }),
+        )
+        .then((res) =>
+          Logger.verbose(
+            `Default template specification created for class ${newClass.id}`,
+            'ClassService.create',
+          ),
+        )
+        .catch((error) => Logger.error(error, 'ClassService.create'));
+    }
+    return newClass;
   }
 
   async getOne(options: FindOneOptions<ClassEntity>): Promise<ClassEntity | null> {

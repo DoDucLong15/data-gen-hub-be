@@ -42,6 +42,18 @@ export class SystemConfigurationService {
             SystemConfigUtils.loginUrl = stringValue;
             Logger.verbose(`Updated LOGIN_URL ${stringValue}`, 'SystemConfigService');
           }
+        } else if(config.key === Keys.DEFAULT_TEMPLATE_SPECIFICATION) {
+          const jsonValue = SCU.getJson(config);
+          if(jsonValue) {
+            SystemConfigUtils.defaultTemplateSpecification = jsonValue;
+            Logger.verbose(`Updated DEFAULT_TEMPLATE_SPECIFICATION`, 'SystemConfigService');
+          }
+        } else if(config.key === Keys.DEFAULT_FILE_PATHS) {
+          const jsonValue = SCU.getJson(config);
+          if(jsonValue) {
+            SystemConfigUtils.defaultListTemplateFilePaths = jsonValue;
+            Logger.verbose(`Updated DEFAULT_FILE_URLS: ${JSON.stringify(jsonValue)}`, 'SystemConfigService');
+          }
         }
       }
     } catch (error) {

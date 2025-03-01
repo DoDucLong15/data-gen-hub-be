@@ -1,6 +1,7 @@
 import { UserEntity } from "../../users/entities/user.entity";
 import { AbstractAuditingEntity } from "../../base/entities/abstract-auditing-entity";
-import { Column, Entity, ManyToOne } from "typeorm";
+import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
+import { TemplateSpecificationEntity } from "../../template-specification/entities/template-specification.entity";
 
 @Entity('classes')
 export class ClassEntity extends AbstractAuditingEntity {
@@ -20,4 +21,9 @@ export class ClassEntity extends AbstractAuditingEntity {
     onDelete: 'CASCADE',
   })
   teacher: UserEntity;
+  
+  @OneToMany(() => TemplateSpecificationEntity, (templateSpecification) => templateSpecification.class, {
+    cascade: true
+  })
+  templateSpecifications: TemplateSpecificationEntity[];
 }
