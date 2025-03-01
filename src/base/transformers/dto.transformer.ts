@@ -26,3 +26,11 @@ export function transformBooleanValue({ value }: { value: string }): boolean | s
 export function transformToBoolean({ value }: { value: any }): boolean {
   return value === 'true' || value === true;
 }
+
+export function transformToJSON({ value }: { value: string }): any {
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return value;
+  }
+}

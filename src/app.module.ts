@@ -13,6 +13,7 @@ import { SystemConfigurationModule } from './system-configuration/system-configu
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ClassModule } from './class/class.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { TemplateSpecificationModule } from './template-specification/template-specification.module';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -40,6 +41,7 @@ const environment = process.env.NODE_ENV ?? 'local';
     }),
     ClassModule,
     ScheduleModule.forRoot(),
+    TemplateSpecificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
