@@ -14,12 +14,8 @@ export class MailerService {
     return nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        type: 'oauth2',
-        user: config?.googleMailerUser,
-        clientId: config?.googleOauthClientID,
-        clientSecret: config?.googleOauthClientSecret,
-        refreshToken: config?.googleMailerRefreshToken,
-        accessToken: config?.googleMailerAccessToken,
+        user: config.googleMailerUser,
+        pass: config.googleMailerPassword,
       },
     });
   }

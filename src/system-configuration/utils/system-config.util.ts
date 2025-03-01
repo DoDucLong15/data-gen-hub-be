@@ -3,6 +3,10 @@ import { SystemConfigEntity } from '../entities/system-config.entity';
 import { InternalServerErrorException, Logger } from '@nestjs/common';
 
 export class SystemConfigUtils {
+  public static logoUrl: string;
+  public static systemName: string;
+  public static loginUrl: string;
+  
   static getValue(entity: SystemConfigEntity): string | number | boolean | any {
     if (CommonUtils.isNotNullish(entity.stringValue)) return entity.stringValue;
     if (CommonUtils.isNotNullish(entity.booleanValue)) return entity.booleanValue;
