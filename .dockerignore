@@ -1,0 +1,6 @@
+Dockerfile
+.dockerignore
+node_modules
+.git
+drive_file
+files_save_modified_time
