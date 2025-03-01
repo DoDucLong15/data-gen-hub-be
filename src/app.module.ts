@@ -12,6 +12,7 @@ import { AuthModule } from './auth/auth.module';
 import { SystemConfigurationModule } from './system-configuration/system-configuration.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ClassModule } from './class/class.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -38,6 +39,7 @@ const environment = process.env.NODE_ENV ?? 'local';
       maxListeners: 20,
     }),
     ClassModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],

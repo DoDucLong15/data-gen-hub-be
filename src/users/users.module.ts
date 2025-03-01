@@ -5,10 +5,12 @@ import { RoleService } from './sub-services/role.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RoleEnity } from './entities/role.entity';
 import { UserEntity } from './entities/user.entity';
+import { MailerModule } from 'src/mailer/mailer.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([RoleEnity, UserEntity]),
+    MailerModule
   ],
   controllers: [UsersController],
   providers: [UsersService, RoleService],

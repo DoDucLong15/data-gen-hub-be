@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
@@ -6,13 +6,17 @@ import { CreateUserDto, UpdateUserDto } from './dtos/user.dto';
 import { RoleService } from './sub-services/role.service';
 import { MapperUserResponse } from './helpers/mapper.helper';
 import { UserResponse } from './types/user-response.type';
+import { MailerService } from 'src/mailer/mailer.service';
+import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.util';
+import { TemplateHelper } from 'src/mailer/helpers/template.helper';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
-    private readonly roleService: RoleService
+    private readonly roleService: RoleService,
+    private readonly mailerService: MailerService
   ){}
 
   async createUser(dto: CreateUserDto): Promise<UserResponse> {
@@ -26,6 +30,13 @@ export class UsersService {
     const newUser = await this.userRepository.save({
       ...dto,
       role: role
+    })
+    this.mailerService.sendEmail({
+      to: newUser.email,
+      subject: `Welcome to ${SystemConfigUtils.systemName}`,
+      content: TemplateHelper.getTemplateNotifyNewUser(newUser.email),
+    }).then((res) => Logger.verbose(`Send to ${newUser.email} success`, 'UsersService.createUser')).catch((error) => {
+      Logger.error(`Failed to send email to ${newUser.email}: ${error?.message}`, 'UsersService.createUser');
     })
     return MapperUserResponse(newUser);
   }

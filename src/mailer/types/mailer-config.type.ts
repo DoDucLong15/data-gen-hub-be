@@ -1,10 +1,7 @@
 export type MailerConfig = {
-  googleOauthClientID: string;
-  googleOauthClientSecret: string;
-  googleMailerRefreshToken: string;
   googleMailerUser: string;
-  googleMailerAccessToken: string;
-};
+  googleMailerPassword: string;
+}
 
 export type SendEmailType = {
   to?: string | string[];
