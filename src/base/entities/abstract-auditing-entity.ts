@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 
 export abstract class AbstractAuditingEntity {
-  @PrimaryColumn('uuid')
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at', default: () => 'CURRENT_TIMESTAMP()' })

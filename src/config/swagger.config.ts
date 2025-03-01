@@ -13,6 +13,7 @@ export function setupSwagger(app: INestApplication): INestApplication {
     .setDescription('## API Document')
     .setVersion('1.0')
     .addTag('Default')
+    .addBearerAuth()
     .addSecurity('token', { type: 'http', scheme: 'bearer' })
     .build();
   const document = SwaggerModule.createDocument(app, config);
