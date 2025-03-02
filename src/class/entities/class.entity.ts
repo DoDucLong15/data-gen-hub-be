@@ -2,6 +2,7 @@ import { UserEntity } from "../../users/entities/user.entity";
 import { AbstractAuditingEntity } from "../../base/entities/abstract-auditing-entity";
 import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
 import { TemplateSpecificationEntity } from "../../template-specification/entities/template-specification.entity";
+import { StudentEntity } from "../../students/entities/student.entity";
 
 @Entity('classes')
 export class ClassEntity extends AbstractAuditingEntity {
@@ -26,4 +27,9 @@ export class ClassEntity extends AbstractAuditingEntity {
     cascade: true
   })
   templateSpecifications: TemplateSpecificationEntity[];
+
+  @OneToMany(() => StudentEntity, (student) => student.class, {
+    cascade: true
+  })
+  students: StudentEntity[];
 }
