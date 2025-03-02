@@ -15,6 +15,7 @@ import { ClassModule } from './class/class.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TemplateSpecificationModule } from './template-specification/template-specification.module';
 import { OfficeModule } from './office/office.module';
+import { StudentsModule } from './students/students.module';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -44,6 +45,7 @@ const environment = process.env.NODE_ENV ?? 'local';
     ScheduleModule.forRoot(),
     TemplateSpecificationModule,
     OfficeModule,
+    StudentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
