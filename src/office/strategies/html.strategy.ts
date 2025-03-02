@@ -7,4 +7,8 @@ export class HtmlStrategy implements OfficeStrategy {
   async importList<T extends any>(file: Express.Multer.File, template: JsonMappingListType): Promise<T[]> {
     throw new Error("Method not implemented.");
   }
+
+  async exportList<T extends unknown>(list: T[], templateFile: Express.Multer.File, template: JsonMappingListType): Promise<Partial<Express.Multer.File>> {
+    throw new Error("Method not implemented.");
+  }
 }

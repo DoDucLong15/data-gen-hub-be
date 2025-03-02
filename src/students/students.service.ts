@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StudentEntity } from './entities/student.entity';
-import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
+import { FindManyOptions, FindOneOptions, In, Repository } from 'typeorm';
 import { CreateStudentDto, UpdateStudentDto } from './dtos/student.dto';
 import { UserPayload } from 'src/auth/types/user-playload.type';
 import { ClassService } from 'src/class/class.service';
@@ -11,6 +11,8 @@ import { TemplateSpecificationImportListStudent } from 'src/office/constants/tem
 import { JsonMappingListType } from 'src/office/types/json-mapping-list.type';
 import { ImportListStudentRequest } from './dtos/import-data.dto';
 import { AsyncUtils } from 'src/utils/async.utils';
+import { ExportListStudentRequest } from './dtos/export-data.dto';
+import { Response } from 'express';
 
 @Injectable()
 export class StudentsService {
@@ -189,6 +191,40 @@ export class StudentsService {
         message: `Error importing students: ${error.message}`,
         data: [],
       };
+    }
+  }
+
+  async exportListStudent(
+    request: ExportListStudentRequest,
+    file: Express.Multer.File,
+    user: UserPayload,
+    res: Response,
+  ): Promise<void> {
+    try {
+      const students = await this.getMany({
+        where: {
+          ...(request.studentIds && { id: In(request.studentIds) }),
+          class: {
+            teacher: {
+              email: user.email,
+            },
+          },
+        },
+      });
+      const result = await this.officeService.exportList<StudentEntity>(
+        students,
+        file,
+        request.jsonMapping,
+      );
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(result.originalname!!)}"`);
+      res.setHeader('Content-Type', result.mimetype ?? file.mimetype);
+      res.send(result.buffer);
+    } catch (error) {
+      Logger.error(error.message, error.stack, 'StudentsService.exportListStudent');
+      res.status(500).json({
+        status: 'error',
+        message: `Error exporting students: ${error.message}`,
+      });
     }
   }
 }

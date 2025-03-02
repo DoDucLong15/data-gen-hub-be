@@ -1,63 +1,260 @@
-import { Logger } from "@nestjs/common";
-import { OfficeStrategy } from "../interfaces/office.interface";
-import { JsonMappingListType } from "../types/json-mapping-list.type";
+import { Logger } from '@nestjs/common';
+import { OfficeStrategy } from '../interfaces/office.interface';
+import { JsonMappingListType } from '../types/json-mapping-list.type';
 import * as XLSX from 'xlsx';
+import { isBoolean } from 'class-validator';
+import * as ExcelJS from 'exceljs';
+import { columnLetterToNumber } from '../helpers/office.helper';
 
 export class ExcelStrategy implements OfficeStrategy {
-  constructor(){}
-  
-  async importList<T extends any>(file: Express.Multer.File, template: JsonMappingListType): Promise<T[]> {
-    Logger.verbose(`Importing Excel file ${file.originalname} with template ${JSON.stringify(template)}`, 'ExcelStrategy.importList');
+  constructor() {}
+
+  async importList<T extends any>(
+    file: Express.Multer.File,
+    template: JsonMappingListType,
+  ): Promise<T[]> {
+    Logger.verbose(
+      `Importing Excel file ${file.originalname} with template ${JSON.stringify(template)}`,
+      'ExcelStrategy.importList',
+    );
     const result: T[] = [];
     try {
       const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-      if(!template.sheets?.length) {
-        Logger.warn(`No sheets found in template ${JSON.stringify(template)}`, 'ExcelStrategy.importList');
+      if (!template.sheets?.length) {
+        Logger.warn(
+          `No sheets found in template ${JSON.stringify(template)}`,
+          'ExcelStrategy.importList',
+        );
         return [];
       }
-      for(const sheet of template.sheets) {
-        if(!sheet.mapping || !sheet.mapping.columns) continue;
+      for (const sheet of template.sheets) {
+        if (!sheet.mapping || !sheet.mapping.columns) continue;
         const names: string[] = [];
-        if(!sheet.name) {
-          workbook.SheetNames.forEach(name => names.push(name));
-        } else if(sheet.name.startsWith('*')) {
+        if (!sheet.name) {
+          workbook.SheetNames.forEach((name) => {
+            if (workbook.Sheets[name]['!hidden'] !== 0) return; // Skip hidden sheets
+            names.push(name);
+          });
+        } else if (sheet.name.startsWith('*')) {
           const index = parseInt(sheet.name.substring(1));
-          if(index < workbook.SheetNames.length) {
+          if (index < workbook.SheetNames.length) {
             names.push(workbook.SheetNames[index]);
           }
         } else {
           names.push(sheet.name);
         }
-        for(const sheetName of names) {
+        for (const sheetName of names) {
           const workSheet: XLSX.WorkSheet = workbook.Sheets[sheetName];
-          if(!workSheet) continue;
+          if (!workSheet) continue;
           const range = XLSX.utils.decode_range(workSheet['!ref']!!);
           let minRow = 1;
           let maxRow = range.e.r + 1;
-          if(sheet.mapping.rows) {
+          if (sheet.mapping.rows && typeof sheet.mapping.rows === 'string') {
             const rows = sheet.mapping.rows.split(':');
-            if(rows.length === 2) {
+            if (rows.length === 2) {
               minRow = rows[0] === '*' ? minRow : parseInt(rows[0]);
               maxRow = rows[1] === '*' ? maxRow : parseInt(rows[1]);
             }
           }
-          for(let row = minRow; row <= maxRow; row++) {
+          for (let row = minRow; row <= maxRow; row++) {
             const item: Record<string, any> = {};
-            for(const column of sheet.mapping.columns) {
+            for (const column of sheet.mapping.columns) {
               const cell = workSheet[column.column + row];
-              if(!cell) continue;
+              if (!cell) continue;
               let value = cell.v;
-              if(typeof value === 'string') value = value.trim();
-              if(column.dbField) item[column.dbField] = column.const ?? value;
+              if (typeof value === 'string') value = value.trim();
+              if (column.dbField) item[column.dbField] = column.const ?? value;
             }
             result.push(item as T);
           }
         }
       }
     } catch (error) {
-      Logger.error(`Error importing Excel file ${file.originalname}: ${error.message}`, error.stack, 'ExcelStrategy.importList');
+      Logger.error(
+        `Error importing Excel file ${file.originalname}: ${error.message}`,
+        error.stack,
+        'ExcelStrategy.importList',
+      );
     }
-    Logger.verbose(`Imported ${result.length} items from Excel file ${file.originalname}`, 'ExcelStrategy.importList');
+    Logger.verbose(
+      `Imported ${result.length} items from Excel file ${file.originalname}`,
+      'ExcelStrategy.importList',
+    );
     return result;
+  }
+
+  async exportList<T>(
+    list: T[],
+    templateFile: Express.Multer.File,
+    template: JsonMappingListType,
+  ): Promise<Partial<Express.Multer.File>> {
+    Logger.verbose(
+      `Exporting list to Excel with template ${JSON.stringify(template)}`,
+      'ExcelStrategy.exportList',
+    );
+
+    try {
+      if (!template.sheets || !template.sheets.length) {
+        throw new Error('No sheets found in template');
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(templateFile.buffer);
+
+      for (const sheetConfig of template.sheets) {
+        if (!sheetConfig.mapping || !sheetConfig.mapping.columns) continue;
+
+        let sheet: ExcelJS.Worksheet;
+        if (!sheetConfig.name) {
+          sheet = workbook.worksheets[0];
+        } else if (sheetConfig.name.startsWith('*')) {
+          const index = parseInt(sheetConfig.name.substring(1));
+          sheet = workbook.worksheets[index] || workbook.worksheets[0];
+        } else {
+          sheet = workbook.getWorksheet(sheetConfig.name) || workbook.worksheets[0];
+        }
+
+        if (!sheet) continue;
+
+        let minRow = 1;
+        if (sheetConfig.mapping.rows && typeof sheetConfig.mapping.rows === 'string') {
+          const rows = sheetConfig.mapping.rows.split(':');
+          if (rows.length === 2) {
+            minRow = rows[0] === '*' ? minRow : parseInt(rows[0]);
+          }
+        }
+
+        for (let row = minRow; row < list.length + minRow; row++) {
+          const excelRow = sheet.getRow(row);
+
+          for (const column of sheetConfig.mapping.columns) {
+            const cell = excelRow.getCell(column.column);
+            const prevStyle = { ...cell.style };
+
+            const value =
+              column.const ??
+              (column.dbField ? (list[row - minRow] as Record<string, any>)[column.dbField] : null);
+
+            cell.value = value ?? '';
+            cell.style = prevStyle;
+          }
+
+          excelRow.commit();
+        }
+
+        if (typeof sheetConfig.visible === 'boolean') {
+          sheet.state = sheetConfig.visible ? 'visible' : 'hidden';
+        }
+        if (sheet.state === 'visible') {
+          sheet.views = [{ state: 'normal' }];
+        }
+      }
+
+      const excelBuffer: Buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+
+      return {
+        buffer: excelBuffer,
+        originalname: templateFile.originalname.replace(
+          /\.xlsx$/,
+          `_${new Date().toISOString().replace(/[:.]/g, '_')}.xlsx`,
+        ),
+        mimetype: templateFile.mimetype,
+        size: excelBuffer.length,
+      };
+    } catch (error) {
+      throw new Error(`Error exporting list to Excel: ${error.message}`);
+    } finally {
+      Logger.verbose(`Exported list to Excel`, 'ExcelStrategy.exportList');
+    }
+  }
+
+  async exportListV2<T extends unknown>(
+    list: T[],
+    templateFile: Express.Multer.File,
+    template: JsonMappingListType,
+  ): Promise<Partial<Express.Multer.File>> {
+    Logger.verbose(
+      `Exporting list to Excel with template ${JSON.stringify(template)}`,
+      'ExcelStrategy.exportList',
+    );
+    try {
+      if (!template.sheets || !template.sheets.length) {
+        throw new Error('No sheets found in template');
+      }
+      const workbook = XLSX.read(templateFile.buffer, {
+        type: 'buffer',
+      });
+      for (const sheet of template.sheets) {
+        if (!sheet.mapping || !sheet.mapping.columns) continue;
+        const names: string[] = [];
+        if (!sheet.name) {
+          names.push(workbook.SheetNames[0]);
+        } else if (sheet.name.startsWith('*')) {
+          const index = parseInt(sheet.name.substring(1));
+          if (index < workbook.SheetNames.length) {
+            names.push(workbook.SheetNames[index]);
+          }
+        } else {
+          names.push(sheet.name);
+        }
+        for (const sheetName of names) {
+          let workSheet: XLSX.WorkSheet = workbook.Sheets[sheetName];
+          if (!workSheet) continue;
+          let minRow = 1;
+          if (sheet.mapping.rows && typeof sheet.mapping.rows === 'string') {
+            const rows = sheet.mapping.rows.split(':');
+            if (rows.length === 2) {
+              minRow = rows[0] === '*' ? minRow : parseInt(rows[0]);
+            }
+          }
+          let maxCol = 0;
+          let maxRow = minRow;
+          if (workSheet['!ref']) {
+            const range = XLSX.utils.decode_range(workSheet['!ref']);
+            maxCol = range.e.c;
+            maxRow = range.e.r;
+          }
+          console.log(minRow);
+          for (let row = minRow; row < list.length + minRow; row++) {
+            for (const column of sheet.mapping.columns) {
+              const value =
+                column.const ??
+                (column.dbField
+                  ? (list[row - minRow] as Record<string, any>)[column.dbField]
+                  : null);
+              workSheet[column.column + row] = {
+                v: value ?? '',
+                t: typeof value === 'number' ? 'n' : 's',
+              };
+              if (value) {
+                maxCol = Math.max(maxCol, XLSX.utils.decode_col(column.column));
+                maxRow = row;
+              }
+            }
+          }
+          if (isBoolean(sheet.visible)) {
+            workSheet['!hidden'] = sheet.visible ? 0 : 1;
+          }
+          workSheet['!ref'] = XLSX.utils.encode_range({
+            s: { c: 0, r: 0 },
+            e: { c: maxCol, r: maxRow },
+          });
+        }
+      }
+      const excelBuffer: Buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+      return {
+        buffer: excelBuffer,
+        originalname: templateFile.originalname.replace(
+          /\.xlsx$/,
+          `_${new Date().toISOString().replace(/[:.]/g, '_')}.xlsx`,
+        ),
+        mimetype: templateFile.mimetype,
+        size: excelBuffer.length,
+      };
+    } catch (error) {
+      throw new Error(`Error exporting list to Excel: ${error.message}`);
+    } finally {
+      Logger.verbose(`Exported list to Excel`, 'ExcelStrategy.exportList');
+    }
   }
 }

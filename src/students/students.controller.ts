@@ -1,4 +1,18 @@
-import { Body, ClassSerializerInterceptor, Controller, Delete, Get, Param, Patch, Post, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  ClassSerializerInterceptor,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Res,
+  UploadedFile,
+  UploadedFiles,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
@@ -11,7 +25,9 @@ import { UserPayload } from 'src/auth/types/user-playload.type';
 import { StudentEntity } from './entities/student.entity';
 import { BaseResponse } from 'src/base/types/response.type';
 import { ImportListStudentRequest } from './dtos/import-data.dto';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { ExportListStudentRequest } from './dtos/export-data.dto';
+import { Response } from 'express';
 
 @ApiTags('Student')
 @ApiBearerAuth()
@@ -23,12 +39,18 @@ export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 
   @Post()
-  async create(@Body() request: CreateStudentDto, @User() user: UserPayload): Promise<StudentEntity> {
+  async create(
+    @Body() request: CreateStudentDto,
+    @User() user: UserPayload,
+  ): Promise<StudentEntity> {
     return await this.studentsService.create(request, user);
   }
 
   @Get(':classId')
-  async list(@Param('classId') classId: string, @User() user: UserPayload): Promise<StudentEntity[]> {
+  async list(
+    @Param('classId') classId: string,
+    @User() user: UserPayload,
+  ): Promise<StudentEntity[]> {
     return await this.studentsService.list(classId, user);
   }
 
@@ -38,17 +60,43 @@ export class StudentsController {
   }
 
   @Patch()
-  async update(@Body() request: UpdateStudentDto, @User() user: UserPayload): Promise<StudentEntity> {
+  async update(
+    @Body() request: UpdateStudentDto,
+    @User() user: UserPayload,
+  ): Promise<StudentEntity> {
     return await this.studentsService.update(request, user);
   }
 
   @Post('import/list')
-  @UseInterceptors(FilesInterceptor('files', 10, {
-    limits: {
-      fileSize: 1024 * 1024 * 5
-    }
-  }))
-  async importList(@Body() request: ImportListStudentRequest, @User() user: UserPayload, @UploadedFiles() files: Express.Multer.File[]): Promise<BaseResponse> {
-    return await this.studentsService.importListStudents(files, request,  user);
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      limits: {
+        fileSize: 1024 * 1024 * 5,
+      },
+    }),
+  )
+  async importList(
+    @Body() request: ImportListStudentRequest,
+    @User() user: UserPayload,
+    @UploadedFiles() files: Express.Multer.File[],
+  ): Promise<BaseResponse> {
+    return await this.studentsService.importListStudents(files, request, user);
+  }
+
+  @Post('export/list')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 1024 * 1024 * 5,
+      },
+    }),
+  )
+  async exportList(
+    @Body() request: ExportListStudentRequest,
+    @User() user: UserPayload,
+    @UploadedFile() file: Express.Multer.File,
+    @Res() res: Response,
+  ): Promise<void> {
+    return await this.studentsService.exportListStudent(request, file, user, res);
   }
 }
