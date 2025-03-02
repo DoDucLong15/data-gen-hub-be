@@ -14,6 +14,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ClassModule } from './class/class.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TemplateSpecificationModule } from './template-specification/template-specification.module';
+import { OfficeModule } from './office/office.module';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -42,6 +43,7 @@ const environment = process.env.NODE_ENV ?? 'local';
     ClassModule,
     ScheduleModule.forRoot(),
     TemplateSpecificationModule,
+    OfficeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
