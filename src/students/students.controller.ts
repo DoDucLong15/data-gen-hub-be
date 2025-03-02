@@ -1,4 +1,4 @@
-import { Body, ClassSerializerInterceptor, Controller, Delete, Get, Param, Patch, Post, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Delete, Get, Param, Patch, Post, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
@@ -10,6 +10,8 @@ import { User } from 'src/auth/decorators/user.decorator';
 import { UserPayload } from 'src/auth/types/user-playload.type';
 import { StudentEntity } from './entities/student.entity';
 import { BaseResponse } from 'src/base/types/response.type';
+import { ImportListStudentRequest } from './dtos/import-data.dto';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Student')
 @ApiBearerAuth()
@@ -22,7 +24,7 @@ export class StudentsController {
 
   @Post()
   async create(@Body() request: CreateStudentDto, @User() user: UserPayload): Promise<StudentEntity> {
-    return await this.studentsService._save(request, user);
+    return await this.studentsService.create(request, user);
   }
 
   @Get(':classId')
@@ -38,5 +40,15 @@ export class StudentsController {
   @Patch()
   async update(@Body() request: UpdateStudentDto, @User() user: UserPayload): Promise<StudentEntity> {
     return await this.studentsService.update(request, user);
+  }
+
+  @Post('import/list')
+  @UseInterceptors(FilesInterceptor('files', 10, {
+    limits: {
+      fileSize: 1024 * 1024 * 5
+    }
+  }))
+  async importList(@Body() request: ImportListStudentRequest, @User() user: UserPayload, @UploadedFiles() files: Express.Multer.File[]): Promise<BaseResponse> {
+    return await this.studentsService.importListStudents(files, request,  user);
   }
 }

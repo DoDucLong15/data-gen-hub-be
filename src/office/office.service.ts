@@ -6,6 +6,7 @@ import { WordStrategy } from './strategies/word.strategy';
 import { HtmlStrategy } from './strategies/html.strategy';
 import { MimeType } from 'src/template-specification/constants/mime-type.const';
 import { FileTypes } from 'src/template-specification/enums/file-type.enum';
+import { JsonMappingListType } from './types/json-mapping-list.type';
 
 @Injectable()
 export class OfficeService {
@@ -37,5 +38,10 @@ export class OfficeService {
       throw new Error(`Strategy ${name} not found`);
     }
     return this.officeStrategy[name];
+  }
+
+  async importList<T extends any>(file: Express.Multer.File, template: JsonMappingListType): Promise<T[]> {
+    const strategy = this.getStrategyByMimeType(file.mimetype);
+    return await strategy.importList<T>(file, template);
   }
 }

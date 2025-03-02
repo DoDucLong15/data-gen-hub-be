@@ -9,6 +9,7 @@ import { ClassEntity } from './entities/class.entity';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { Roles } from 'src/auth/decorators/role.decorator';
 import { RoleTypes } from 'src/users/enums/role-types.enum';
+import { BaseResponse } from 'src/base/types/response.type';
 
 @ApiTags('Class')
 @ApiBearerAuth()
