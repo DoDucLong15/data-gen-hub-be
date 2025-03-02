@@ -1,9 +1,11 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { RoleTypes } from "../enums/role-types.enum";
+import { Transform } from "class-transformer";
 
 export class CreateUserDto {
   @IsNotEmpty()
   @IsEmail()
+  @Transform(({ value }) => value?.toLowerCase())
   email: string;
 
   @IsNotEmpty()

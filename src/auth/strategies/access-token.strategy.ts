@@ -13,6 +13,9 @@ export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   validate(payload: UserPayload) {
-    return payload;
+    return {
+      email: payload.email?.toLowerCase(),
+      role: payload.role,
+    };
   }
 }
