@@ -1,9 +1,9 @@
-import { AbstractAuditingEntity } from "../../base/entities/abstract-auditing-entity";
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
-import { RoleEnity } from "./role.entity";
-import { Exclude, Expose } from "class-transformer";
-import { RoleTypes } from "../enums/role-types.enum";
-import { ClassEntity } from "../../class/entities/class.entity";
+import { AbstractAuditingEntity } from '../../base/entities/abstract-auditing-entity';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { RoleEnity } from './role.entity';
+import { Exclude, Expose } from 'class-transformer';
+import { RoleTypes } from '../enums/role-types.enum';
+import { ClassEntity } from '../../class/entities/class.entity';
 
 @Entity('users')
 export class UserEntity extends AbstractAuditingEntity {
@@ -28,7 +28,7 @@ export class UserEntity extends AbstractAuditingEntity {
   @ManyToOne(() => RoleEnity, (role) => role.users, {
     nullable: false,
     eager: true,
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'role_id' })
   role: RoleEnity;

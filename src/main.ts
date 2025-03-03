@@ -9,7 +9,7 @@ const configService = new ConfigService(configuration());
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   setup(app);
 
   process.on('SIGINT', async () => {

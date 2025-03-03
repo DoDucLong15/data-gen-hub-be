@@ -26,8 +26,9 @@ import { StudentEntity } from './entities/student.entity';
 import { BaseResponse } from 'src/base/types/response.type';
 import { ImportListStudentRequest } from './dtos/import-data.dto';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-import { ExportListStudentRequest } from './dtos/export-data.dto';
+import { ExportListStudentRequest, ExportStudentFormDataRequest } from './dtos/export-data.dto';
 import { Response } from 'express';
+import { request } from 'http';
 
 @ApiTags('Student')
 @ApiBearerAuth()
@@ -106,5 +107,14 @@ export class StudentsController {
     @Res() res: Response,
   ): Promise<void> {
     return await this.studentsService.exportListStudent(request, file, user, res);
+  }
+
+  @Post('generate')
+  async generate(
+    @Body() request: ExportStudentFormDataRequest,
+    @User() user: UserPayload,
+    @Res() res: Response,
+  ): Promise<void> {
+    return await this.studentsService.generateStudentFormData(request, user, res);
   }
 }

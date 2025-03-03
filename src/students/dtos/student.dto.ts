@@ -1,5 +1,5 @@
-import { PartialType } from "@nestjs/swagger";
-import { IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsString } from "class-validator";
+import { PartialType } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
 
 export class CreateStudentDto {
   @IsNotEmpty()
@@ -13,7 +13,7 @@ export class CreateStudentDto {
   @IsOptional()
   @IsEmail()
   email: string;
-  
+
   @IsOptional()
   @IsString()
   lastName: string;

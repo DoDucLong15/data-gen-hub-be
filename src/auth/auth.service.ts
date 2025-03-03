@@ -76,7 +76,7 @@ export class AuthService {
     try {
       const payload = await this.jwtService.verifyAsync<UserPayload>(request.refreshToken, {
         secret: this.configService.get<string>('auth.jwtRefreshSecret'),
-      })
+      });
       return this.getTokens(payload.email, payload.role);
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');

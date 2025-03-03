@@ -1,9 +1,9 @@
-import { IsEnum, IsNotEmpty, IsObject, IsOptional, IsString } from "class-validator";
-import { FileTypes } from "../enums/file-type.enum";
-import { JsonMappingType } from "../types/json.type";
-import { ApiProperty, PartialType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { transformToJSON } from "src/base/transformers/dto.transformer";
+import { IsEnum, IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
+import { FileTypes } from '../enums/file-type.enum';
+import { JsonMappingSingleType } from '../types/json.type';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import { transformToJSON } from 'src/base/transformers/dto.transformer';
 
 export class CreateTemplateSpecificationDto {
   @IsNotEmpty()
@@ -17,7 +17,7 @@ export class CreateTemplateSpecificationDto {
   @IsNotEmpty()
   @IsObject()
   @Transform(transformToJSON)
-  jsonMapping: JsonMappingType;
+  jsonMapping: JsonMappingSingleType;
 
   @IsNotEmpty()
   @IsString()

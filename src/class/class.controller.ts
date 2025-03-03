@@ -1,4 +1,15 @@
-import { Body, ClassSerializerInterceptor, Controller, Delete, Get, Param, Patch, Post, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  ClassSerializerInterceptor,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ClassService } from './class.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
@@ -37,7 +48,7 @@ export class ClassController {
       order: { createdAt: 'DESC' },
     });
   }
-  
+
   @Delete(':id')
   async delete(@User() user: UserPayload, @Param('id') id: string): Promise<boolean> {
     return await this.classService.delete(id, user);

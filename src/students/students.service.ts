@@ -11,8 +11,12 @@ import { TemplateSpecificationImportListStudent } from 'src/office/constants/tem
 import { JsonMappingListType } from 'src/office/types/json-mapping-list.type';
 import { ImportListStudentRequest } from './dtos/import-data.dto';
 import { AsyncUtils } from 'src/utils/async.utils';
-import { ExportListStudentRequest } from './dtos/export-data.dto';
+import { ExportListStudentRequest, ExportStudentFormDataRequest } from './dtos/export-data.dto';
 import { Response } from 'express';
+import { TemplateSpecificationService } from 'src/template-specification/template-specification.service';
+import { StorageService } from 'src/storage/storage.service';
+import { streamToBuffer } from 'src/storage/helpers/convert.helper';
+const archiver = require('archiver');
 
 @Injectable()
 export class StudentsService {
@@ -21,6 +25,8 @@ export class StudentsService {
     private readonly studentRepository: Repository<StudentEntity>,
     private readonly classService: ClassService,
     private readonly officeService: OfficeService,
+    private readonly templateSpecificationService: TemplateSpecificationService,
+    private readonly storageService: StorageService,
   ) {}
 
   async create(request: CreateStudentDto, user: UserPayload): Promise<StudentEntity> {
@@ -140,7 +146,7 @@ export class StudentsService {
     user: UserPayload,
   ): Promise<BaseResponse> {
     try {
-      if(!files || files.length === 0) {
+      if (!files || files.length === 0) {
         throw new BadRequestException('Files are required');
       }
       const _class = await this.classService.getOne({
@@ -204,7 +210,7 @@ export class StudentsService {
     res: Response,
   ): Promise<void> {
     try {
-      if(!file) {
+      if (!file) {
         throw new BadRequestException('File is required');
       }
       const students = await this.getMany({
@@ -222,7 +228,10 @@ export class StudentsService {
         file,
         request.jsonMapping,
       );
-      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(result.originalname!!)}"`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${encodeURIComponent(result.originalname!)}"`,
+      );
       res.setHeader('Content-Type', result.mimetype ?? file.mimetype);
       res.send(result.buffer);
     } catch (error) {
@@ -230,6 +239,77 @@ export class StudentsService {
       res.status(500).json({
         status: 'error',
         message: `Error exporting students: ${error.message}`,
+      });
+    }
+  }
+
+  async generateStudentFormData(
+    request: ExportStudentFormDataRequest,
+    user: UserPayload,
+    res: Response,
+  ): Promise<void> {
+    try {
+      const templateSpecification = await this.templateSpecificationService.getOne({
+        where: {
+          id: request.templateSpecificationId,
+          class: {
+            teacher: {
+              email: user.email,
+            },
+          },
+        },
+      });
+      if (!templateSpecification) {
+        throw new BadRequestException(
+          `Template specification ${request.templateSpecificationId} not found`,
+        );
+      }
+      const students = await this.getMany({
+        where: {
+          ...(request.studentIds && { id: In(request.studentIds) }),
+          class: {
+            teacher: {
+              email: user.email,
+            },
+          },
+        },
+      });
+      // Download file
+      const readable = await this.storageService.downloadFile(templateSpecification?.template?.key);
+      if (!readable) {
+        throw new BadRequestException('Failed to download template file');
+      }
+      const metadata = await this.storageService.getMetadata(templateSpecification?.template?.key);
+      if (!metadata) {
+        throw new BadRequestException('Failed to get metadata of template file');
+      }
+      const buffer = await streamToBuffer(readable);
+      const file: Partial<Express.Multer.File> = {
+        buffer: buffer,
+        originalname: metadata.name?.split('/').pop(),
+        mimetype: metadata.contentType!,
+      };
+
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename=${Date.now()}.zip`);
+
+      const archive = archiver('zip', { zlib: { level: 9 } });
+      archive.pipe(res);
+
+      for (const student of students) {
+        const result = await this.officeService.exportSingle<StudentEntity>(
+          student,
+          file,
+          templateSpecification.jsonMapping,
+        );
+        archive.append(result.buffer, { name: result.originalname });
+      }
+      archive.finalize();
+    } catch (error) {
+      Logger.error(error.message, error.stack, 'StudentsService.generateStudentFormData');
+      res.status(500).json({
+        status: 'error',
+        message: `Error generating student form data: ${error.message}`,
       });
     }
   }

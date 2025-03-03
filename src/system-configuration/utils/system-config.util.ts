@@ -9,7 +9,7 @@ export class SystemConfigUtils {
   public static loginUrl: string;
   public static defaultTemplateSpecification: TemplateSpecificationEntity[];
   public static defaultListTemplateFilePaths: string[];
-  
+
   static getValue(entity: SystemConfigEntity): string | number | boolean | any {
     if (CommonUtils.isNotNullish(entity.stringValue)) return entity.stringValue;
     if (CommonUtils.isNotNullish(entity.booleanValue)) return entity.booleanValue;

@@ -1,4 +1,4 @@
-export type SheetType = {
+export type SheetSingleType = {
   name?: string; //để trống tức là sheet bất kì đang được active | *index là theo số thứ tự sheet bắt đầu từ *0, *1, có tác dụng với cả sheet ẩn
   visible?: boolean; // [true|false]. Chỉ áp dụng với db2excel, db2list để hiện/ẩn sheet sau khi ghi giữ liệu
   mapping: {
@@ -14,9 +14,9 @@ export type SheetType = {
   };
 };
 
-export type JsonMappingType = {
+export type JsonMappingSingleType = {
   config?: {
-    nameFormat?: string; // Kí tự đầu tiên ? báo hiệu lấy theo dbfiled, nếu không có là hằng kí tự.
-  }
-  sheets: SheetType[];
+    nameFormat?: string[]; // Kí tự đầu tiên ? báo hiệu lấy theo dbfiled, nếu không có là hằng kí tự.
+  };
+  sheets: SheetSingleType[];
 };

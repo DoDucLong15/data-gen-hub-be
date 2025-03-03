@@ -1,11 +1,27 @@
-import { Body, ClassSerializerInterceptor, Controller, Delete, Get, Param, Post, Put, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  ClassSerializerInterceptor,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { SystemConfigurationService } from './system-configuration.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { Roles } from 'src/auth/decorators/role.decorator';
 import { RoleTypes } from 'src/users/enums/role-types.enum';
-import { CreateSystemConfigDto, GetSystemConfigQueryDto, UpdateSystemConfigDto } from './dtos/system-config.dto';
+import {
+  CreateSystemConfigDto,
+  GetSystemConfigQueryDto,
+  UpdateSystemConfigDto,
+} from './dtos/system-config.dto';
 import { SystemConfigEntity } from './entities/system-config.entity';
 import { BaseResponse } from 'src/base/types/response.type';
 

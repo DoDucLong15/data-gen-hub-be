@@ -37,9 +37,11 @@ export class UsersController {
   @Get()
   @Roles(RoleTypes.ADMIN)
   async getAllUsers(): Promise<UserResponse[]> {
-    return await this.usersService.getUsers({
-      order: {createdAt: 'DESC'}
-    }).then(users => users.map(MapperUserResponse));
+    return await this.usersService
+      .getUsers({
+        order: { createdAt: 'DESC' },
+      })
+      .then((users) => users.map(MapperUserResponse));
   }
 
   @Delete(':id')
