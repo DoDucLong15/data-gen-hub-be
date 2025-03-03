@@ -8,10 +8,7 @@ import { UserEntity } from './entities/user.entity';
 import { MailerModule } from 'src/mailer/mailer.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([RoleEnity, UserEntity]),
-    MailerModule
-  ],
+  imports: [TypeOrmModule.forFeature([RoleEnity, UserEntity]), MailerModule],
   controllers: [UsersController],
   providers: [UsersService, RoleService],
   exports: [UsersService],

@@ -1,10 +1,10 @@
-import { Bucket } from '@google-cloud/storage';
+import { Bucket, FileMetadata } from '@google-cloud/storage';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { getDownloadURL } from 'firebase-admin/storage';
 import { StorageUploadResult } from './types/storage.type';
 import { Readable } from 'stream';
-
+import { MetadataResponse } from '@google-cloud/storage/build/cjs/src/nodejs-common';
 
 @Injectable()
 export class StorageService {
@@ -25,13 +25,13 @@ export class StorageService {
       return {
         key: filePath,
         url: await getDownloadURL(file),
-      }
+      };
     } catch (e) {
       return undefined;
     }
   }
 
-  async downloadFile(filePath: string, _bucket?: Bucket,): Promise<Readable | undefined> {
+  async downloadFile(filePath: string, _bucket?: Bucket): Promise<Readable | undefined> {
     try {
       const bucket = _bucket ?? admin.storage().bucket();
       const file = bucket.file(filePath);
@@ -55,9 +55,21 @@ export class StorageService {
     }
   }
 
-  async getPublicURL(filePath: string, _bucket?: Bucket,): Promise<string> {
+  async getPublicURL(filePath: string, _bucket?: Bucket): Promise<string> {
     const bucket = _bucket ?? admin.storage().bucket();
     const file = bucket.file(filePath);
     return await getDownloadURL(file);
+  }
+
+  async getMetadata(filePath: string, _bucket?: Bucket): Promise<FileMetadata | undefined> {
+    try {
+      const bucket = _bucket ?? admin.storage().bucket();
+      const file = bucket.file(filePath);
+      const [metadata] = await file.getMetadata();
+      return metadata;
+    } catch (e) {
+      Logger.error(e, 'StorageService.getMetadata');
+      return undefined;
+    }
   }
 }

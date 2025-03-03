@@ -5,9 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SystemConfigEntity } from './entities/system-config.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([SystemConfigEntity]),
-  ],
+  imports: [TypeOrmModule.forFeature([SystemConfigEntity])],
   controllers: [SystemConfigurationController],
   providers: [SystemConfigurationService],
   exports: [SystemConfigurationService],

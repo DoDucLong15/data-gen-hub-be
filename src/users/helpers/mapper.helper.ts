@@ -1,5 +1,5 @@
-import { UserEntity } from "../entities/user.entity"
-import { UserResponse } from "../types/user-response.type"
+import { UserEntity } from '../entities/user.entity';
+import { UserResponse } from '../types/user-response.type';
 
 export const MapperUserResponse = (user: UserEntity): UserResponse => {
   return {
@@ -10,6 +10,6 @@ export const MapperUserResponse = (user: UserEntity): UserResponse => {
     school: user.school,
     department: user.department,
     position: user.position,
-    role: user.roleName
-  }
-}
+    role: user.roleName,
+  };
+};

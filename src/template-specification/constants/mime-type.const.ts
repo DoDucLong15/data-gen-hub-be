@@ -1,4 +1,4 @@
-import { FileTypes } from "../enums/file-type.enum";
+import { FileTypes } from '../enums/file-type.enum';
 
 export const MimeType = {
   [FileTypes.EXCEL]: [
@@ -10,7 +10,5 @@ export const MimeType = {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/msword',
   ],
-  [FileTypes.HTML]: [
-    'text/html',
-  ],
-}
+  [FileTypes.HTML]: ['text/html'],
+};

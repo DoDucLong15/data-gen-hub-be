@@ -7,11 +7,7 @@ import { PassportModule } from '@nestjs/passport';
 import { AccessTokenStrategy } from './strategies/access-token.strategy';
 
 @Module({
-  imports: [
-    JwtModule.register({}),
-    UsersModule,
-    PassportModule
-  ],
+  imports: [JwtModule.register({}), UsersModule, PassportModule],
   controllers: [AuthController],
   providers: [AuthService, AccessTokenStrategy],
 })

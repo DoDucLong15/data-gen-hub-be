@@ -1,4 +1,4 @@
-import { SystemConfigUtils } from "src/system-configuration/utils/system-config.util";
+import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.util';
 
 export class TemplateHelper {
   static getTemplateNotifyNewUser(name: string) {

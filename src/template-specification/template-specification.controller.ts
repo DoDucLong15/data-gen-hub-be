@@ -81,7 +81,10 @@ export class TemplateSpecificationController {
   }
 
   @Get(':classId')
-  async list(@User() user: UserPayload, @Param('classId') classId: string): Promise<TemplateSpecificationEntity[]> {
+  async list(
+    @User() user: UserPayload,
+    @Param('classId') classId: string,
+  ): Promise<TemplateSpecificationEntity[]> {
     return await this.templateSpecificationService.list(classId, user);
   }
 }

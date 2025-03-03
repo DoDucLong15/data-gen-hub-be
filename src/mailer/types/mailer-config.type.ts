@@ -1,7 +1,7 @@
 export type MailerConfig = {
   googleMailerUser: string;
   googleMailerPassword: string;
-}
+};
 
 export type SendEmailType = {
   to?: string | string[];
@@ -16,5 +16,4 @@ export type SendEmailType = {
     content?: string | Buffer;
     raw?: string | Buffer;
   }[];
-}
-
+};

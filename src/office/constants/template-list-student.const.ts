@@ -5,7 +5,7 @@ export const TemplateSpecificationImportListStudent = {
       mapping: {
         rows: '8:*',
         columns: [
-          { column: 'B', dbField: 'mssv'},
+          { column: 'B', dbField: 'mssv' },
           { column: 'C', dbField: 'lastName' },
           { column: 'D', dbField: 'middleName' },
           { column: 'E', dbField: 'firstName' },
@@ -21,7 +21,6 @@ export const TemplateSpecificationImportListStudent = {
   ],
 };
 
-
 export const TemplateSpecificationExportListStudent = {
   sheets: [
     {
@@ -30,7 +29,7 @@ export const TemplateSpecificationExportListStudent = {
       mapping: {
         rows: '8:*',
         columns: [
-          { column: 'B', dbField: 'mssv'},
+          { column: 'B', dbField: 'mssv' },
           { column: 'C', dbField: 'lastName' },
           { column: 'D', dbField: 'middleName' },
           { column: 'E', dbField: 'firstName' },

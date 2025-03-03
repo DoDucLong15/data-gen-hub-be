@@ -26,33 +26,36 @@ export class SystemConfigurationService {
       for (const config of payload) {
         if (config.key === Keys.LOGO_URL) {
           const stringValue = SCU.getString(config);
-          if(stringValue) {
+          if (stringValue) {
             SystemConfigUtils.logoUrl = stringValue;
             Logger.verbose(`Updated LOGO_URL ${stringValue}`, 'SystemConfigService');
           }
-        } else if(config.key === Keys.SYSTEM_NAME) {
+        } else if (config.key === Keys.SYSTEM_NAME) {
           const stringValue = SCU.getString(config);
-          if(stringValue) {
+          if (stringValue) {
             SystemConfigUtils.systemName = stringValue;
             Logger.verbose(`Updated SYSTEM_NAME ${stringValue}`, 'SystemConfigService');
           }
-        } else if(config.key === Keys.LOGIN_URL) {
+        } else if (config.key === Keys.LOGIN_URL) {
           const stringValue = SCU.getString(config);
-          if(stringValue) {
+          if (stringValue) {
             SystemConfigUtils.loginUrl = stringValue;
             Logger.verbose(`Updated LOGIN_URL ${stringValue}`, 'SystemConfigService');
           }
-        } else if(config.key === Keys.DEFAULT_TEMPLATE_SPECIFICATION) {
+        } else if (config.key === Keys.DEFAULT_TEMPLATE_SPECIFICATION) {
           const jsonValue = SCU.getJson(config);
-          if(jsonValue) {
+          if (jsonValue) {
             SystemConfigUtils.defaultTemplateSpecification = jsonValue;
             Logger.verbose(`Updated DEFAULT_TEMPLATE_SPECIFICATION`, 'SystemConfigService');
           }
-        } else if(config.key === Keys.DEFAULT_FILE_PATHS) {
+        } else if (config.key === Keys.DEFAULT_FILE_PATHS) {
           const jsonValue = SCU.getJson(config);
-          if(jsonValue) {
+          if (jsonValue) {
             SystemConfigUtils.defaultListTemplateFilePaths = jsonValue;
-            Logger.verbose(`Updated DEFAULT_FILE_URLS: ${JSON.stringify(jsonValue)}`, 'SystemConfigService');
+            Logger.verbose(
+              `Updated DEFAULT_FILE_URLS: ${JSON.stringify(jsonValue)}`,
+              'SystemConfigService',
+            );
           }
         }
       }

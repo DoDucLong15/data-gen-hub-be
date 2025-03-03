@@ -6,11 +6,11 @@ import { MailerConfig, SendEmailType } from './types/mailer-config.type';
 
 @Injectable()
 export class MailerService {
-  constructor(
-    private readonly configService: ConfigService
-  ){}
+  constructor(private readonly configService: ConfigService) {}
 
-  private getGmailTransport(config: MailerConfig): nodemailer.Transporter<SMTPTransport.SentMessageInfo> {
+  private getGmailTransport(
+    config: MailerConfig,
+  ): nodemailer.Transporter<SMTPTransport.SentMessageInfo> {
     return nodemailer.createTransport({
       service: 'gmail',
       auth: {

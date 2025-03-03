@@ -1,6 +1,6 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
-import { RoleTypes } from "../enums/role-types.enum";
-import { Transform } from "class-transformer";
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { RoleTypes } from '../enums/role-types.enum';
+import { Transform } from 'class-transformer';
 
 export class CreateUserDto {
   @IsNotEmpty()
@@ -27,7 +27,7 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   position: string;
-  
+
   @IsOptional()
   @IsString()
   role: RoleTypes = RoleTypes.TEACHER;

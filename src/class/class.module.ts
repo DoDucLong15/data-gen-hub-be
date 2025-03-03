@@ -10,10 +10,10 @@ import { TemplateSpecificationModule } from 'src/template-specification/template
   imports: [
     TypeOrmModule.forFeature([ClassEntity]),
     UsersModule,
-    forwardRef(() => TemplateSpecificationModule)
+    forwardRef(() => TemplateSpecificationModule),
   ],
   controllers: [ClassController],
   providers: [ClassService],
-  exports: [ClassService]
+  exports: [ClassService],
 })
 export class ClassModule {}

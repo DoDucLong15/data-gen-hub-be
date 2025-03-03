@@ -19,7 +19,7 @@ export class TemplateSpecificationService {
     @InjectRepository(TemplateSpecificationEntity)
     private readonly templateSpecificationRepository: Repository<TemplateSpecificationEntity>,
     private readonly storageService: StorageService,
-    @Inject(forwardRef(() => ClassService)) 
+    @Inject(forwardRef(() => ClassService))
     private readonly classService: ClassService,
   ) {}
 
@@ -82,7 +82,7 @@ export class TemplateSpecificationService {
           id: classId,
           teacher: {
             email: user.email,
-          }
+          },
         },
       },
       order: {
@@ -105,7 +105,10 @@ export class TemplateSpecificationService {
     if (!templateSpecification) {
       throw new BadRequestException('Template specification not found');
     }
-    if(!SystemConfigUtils.defaultListTemplateFilePaths || !SystemConfigUtils.defaultListTemplateFilePaths.includes(templateSpecification.template.key)) {
+    if (
+      !SystemConfigUtils.defaultListTemplateFilePaths ||
+      !SystemConfigUtils.defaultListTemplateFilePaths.includes(templateSpecification.template.key)
+    ) {
       await this.storageService.deleteFile(templateSpecification.template.key);
     }
     await this.templateSpecificationRepository.delete(id);
@@ -138,7 +141,10 @@ export class TemplateSpecificationService {
       if (!MimeType[newTemplate.fileType].includes(file.mimetype)) {
         throw new BadRequestException('Invalid file type');
       }
-      if(!SystemConfigUtils.defaultListTemplateFilePaths || !SystemConfigUtils.defaultListTemplateFilePaths.includes(templateSpecification.template.key)) {
+      if (
+        !SystemConfigUtils.defaultListTemplateFilePaths ||
+        !SystemConfigUtils.defaultListTemplateFilePaths.includes(templateSpecification.template.key)
+      ) {
         await this.storageService.deleteFile(templateSpecification.template.key);
       }
       const fileUpload = await this.storageService.uploadDataToFile(
@@ -159,10 +165,15 @@ export class TemplateSpecificationService {
 
   async _save(entities: TemplateSpecificationEntity[]): Promise<boolean> {
     try {
-      await Promise.all(entities.map(async (entity) => await this.templateSpecificationRepository.save(entity)));
+      await Promise.all(
+        entities.map(async (entity) => await this.templateSpecificationRepository.save(entity)),
+      );
       return true;
     } catch (error) {
-      Logger.error(`Failed to save template specifications: ${error?.message}`, 'TemplateSpecificationService._save');
+      Logger.error(
+        `Failed to save template specifications: ${error?.message}`,
+        'TemplateSpecificationService._save',
+      );
       return false;
     }
   }

@@ -7,6 +7,7 @@ import { HtmlStrategy } from './strategies/html.strategy';
 import { MimeType } from 'src/template-specification/constants/mime-type.const';
 import { FileTypes } from 'src/template-specification/enums/file-type.enum';
 import { JsonMappingListType } from './types/json-mapping-list.type';
+import { JsonMappingSingleType } from 'src/template-specification/types/json.type';
 
 @Injectable()
 export class OfficeService {
@@ -40,13 +41,29 @@ export class OfficeService {
     return this.officeStrategy[name];
   }
 
-  async importList<T extends any>(file: Express.Multer.File, template: JsonMappingListType): Promise<T[]> {
+  async importList<T extends any>(
+    file: Express.Multer.File,
+    template: JsonMappingListType,
+  ): Promise<T[]> {
     const strategy = this.getStrategyByMimeType(file.mimetype);
     return await strategy.importList<T>(file, template);
   }
 
-  async exportList<T extends any>(list: T[], templateFile: Express.Multer.File, template: JsonMappingListType): Promise<Partial<Express.Multer.File>> {
+  async exportList<T extends any>(
+    list: T[],
+    templateFile: Express.Multer.File,
+    template: JsonMappingListType,
+  ): Promise<Partial<Express.Multer.File>> {
     const strategy = this.getStrategyByMimeType(templateFile.mimetype);
     return await strategy.exportList<T>(list, templateFile, template);
+  }
+
+  async exportSingle<T extends any>(
+    data: T,
+    templateFile: Partial<Express.Multer.File>,
+    template: JsonMappingSingleType,
+  ): Promise<Partial<Express.Multer.File>> {
+    const strategy = this.getStrategyByMimeType(templateFile.mimetype!!);
+    return await strategy.exportSingle<T>(data, templateFile, template);
   }
 }

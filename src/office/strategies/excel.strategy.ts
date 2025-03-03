@@ -5,6 +5,8 @@ import * as XLSX from 'xlsx';
 import { isBoolean } from 'class-validator';
 import * as ExcelJS from 'exceljs';
 import { columnLetterToNumber } from '../helpers/office.helper';
+import { JsonMappingSingleType } from 'src/template-specification/types/json.type';
+import { CommonUtils } from 'src/utils/common.util';
 
 export class ExcelStrategy implements OfficeStrategy {
   constructor() {}
@@ -255,6 +257,98 @@ export class ExcelStrategy implements OfficeStrategy {
       throw new Error(`Error exporting list to Excel: ${error.message}`);
     } finally {
       Logger.verbose(`Exported list to Excel`, 'ExcelStrategy.exportList');
+    }
+  }
+
+  async exportSingle<T extends unknown>(
+    data: T,
+    templateFile: Partial<Express.Multer.File>,
+    template: JsonMappingSingleType,
+  ): Promise<Partial<Express.Multer.File>> {
+    try {
+      Logger.verbose(
+        `Exporting single to Excel with template ${JSON.stringify(data)}`,
+        'ExcelStrategy.exportSingle',
+      );
+      if (!template.sheets || !template.sheets.length) {
+        throw new Error('No sheets found in template');
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(templateFile.buffer!!);
+
+      for (const sheetConfig of template.sheets) {
+        if (!sheetConfig.mapping || !sheetConfig.mapping.cells) continue;
+
+        let sheet: ExcelJS.Worksheet;
+        if (!sheetConfig.name) {
+          sheet = workbook.worksheets[0];
+        } else if (sheetConfig.name.startsWith('*')) {
+          const index = parseInt(sheetConfig.name.substring(1));
+          sheet = workbook.worksheets[index] || workbook.worksheets[0];
+        } else {
+          sheet = workbook.getWorksheet(sheetConfig.name) || workbook.worksheets[0];
+        }
+
+        if (!sheet) continue;
+
+        for (const cell of sheetConfig.mapping.cells) {
+          // Check format cell
+          // if (cell.cell.match(/^[A-Z]+[1-9]+$/g) === null) continue;
+          const excelCell = sheet.getCell(cell.cell);
+          const prevStyle = { ...excelCell.style };
+
+          const value =
+            cell.const ??
+            (cell.dbField
+              ? (data as Record<string, any>)[cell.dbField]
+              : cell.dbFields
+                ? CommonUtils.formatString(
+                    cell.dbFields[0],
+                    ...cell.dbFields
+                      .slice(1)
+                      .map((field) => (data as Record<string, any>)[field].toString()),
+                  )
+                : null);
+          excelCell.value = value ?? '';
+          excelCell.style = prevStyle;
+        }
+
+        if (typeof sheetConfig.visible === 'boolean') {
+          sheet.state = sheetConfig.visible ? 'visible' : 'hidden';
+        }
+        if (sheet.state === 'visible') {
+          sheet.views = [{ state: 'normal' }];
+        }
+      }
+
+      const excelBuffer: Buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+      let fileResultName =
+        templateFile.originalname?.replace(
+          /\.xlsx$/,
+          `_${new Date().toISOString().replace(/[:.]/g, '_')}.xlsx`,
+        ) || 'export.xlsx';
+      if (template.config?.nameFormat) {
+        let temp = '';
+        template.config.nameFormat.map((s) => {
+          if (s.startsWith('?')) {
+            temp += (data as Record<string, any>)[s.substring(1)];
+          } else {
+            temp += s;
+          }
+        });
+        fileResultName = temp.endsWith('.xlsx') ? temp : temp + '.xlsx';
+      }
+      return {
+        buffer: excelBuffer,
+        originalname: fileResultName,
+        mimetype: templateFile.mimetype,
+        size: excelBuffer.length,
+      };
+    } catch (error) {
+      throw new Error(`Error exporting single to Excel: ${error.message}`);
+    } finally {
+      Logger.verbose(`Exported single to Excel`, 'ExcelStrategy.exportSingle');
     }
   }
 }
