@@ -1,3 +1,4 @@
+import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { ArrayNotEmpty, IsArray, IsNotEmpty, IsObject, IsOptional, IsString } from "class-validator";
 import { transformToArray, transformToJSON } from "src/base/transformers/dto.transformer";
@@ -19,4 +20,8 @@ export class ExportListStudentRequest {
   @IsObject()
   @Transform(transformToJSON)
   jsonMapping: JsonMappingListType = TemplateSpecificationExportListStudent;
+
+  @ApiProperty({ type: 'string', format: 'binary', required: true })
+  @IsOptional()
+  file: any;
 }
