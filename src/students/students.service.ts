@@ -230,7 +230,7 @@ export class StudentsService {
       );
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="${encodeURIComponent(result.originalname!!)}"`,
+        `attachment; filename="${encodeURIComponent(result.originalname!)}"`,
       );
       res.setHeader('Content-Type', result.mimetype ?? file.mimetype);
       res.send(result.buffer);
@@ -287,7 +287,7 @@ export class StudentsService {
       const file: Partial<Express.Multer.File> = {
         buffer: buffer,
         originalname: metadata.name?.split('/').pop(),
-        mimetype: metadata.contentType!!,
+        mimetype: metadata.contentType!,
       };
 
       res.setHeader('Content-Type', 'application/zip');

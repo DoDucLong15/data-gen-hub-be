@@ -63,7 +63,7 @@ export class OfficeService {
     templateFile: Partial<Express.Multer.File>,
     template: JsonMappingSingleType,
   ): Promise<Partial<Express.Multer.File>> {
-    const strategy = this.getStrategyByMimeType(templateFile.mimetype!!);
+    const strategy = this.getStrategyByMimeType(templateFile.mimetype!);
     return await strategy.exportSingle<T>(data, templateFile, template);
   }
 }

@@ -48,7 +48,7 @@ export class ExcelStrategy implements OfficeStrategy {
         for (const sheetName of names) {
           const workSheet: XLSX.WorkSheet = workbook.Sheets[sheetName];
           if (!workSheet) continue;
-          const range = XLSX.utils.decode_range(workSheet['!ref']!!);
+          const range = XLSX.utils.decode_range(workSheet['!ref']!);
           let minRow = 1;
           let maxRow = range.e.r + 1;
           if (sheet.mapping.rows && typeof sheet.mapping.rows === 'string') {
@@ -200,7 +200,7 @@ export class ExcelStrategy implements OfficeStrategy {
           names.push(sheet.name);
         }
         for (const sheetName of names) {
-          let workSheet: XLSX.WorkSheet = workbook.Sheets[sheetName];
+          const workSheet: XLSX.WorkSheet = workbook.Sheets[sheetName];
           if (!workSheet) continue;
           let minRow = 1;
           if (sheet.mapping.rows && typeof sheet.mapping.rows === 'string') {
@@ -275,7 +275,7 @@ export class ExcelStrategy implements OfficeStrategy {
       }
 
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(templateFile.buffer!!);
+      await workbook.xlsx.load(templateFile.buffer!);
 
       for (const sheetConfig of template.sheets) {
         if (!sheetConfig.mapping || !sheetConfig.mapping.cells) continue;

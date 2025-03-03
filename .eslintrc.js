@@ -4,6 +4,7 @@ module.exports = {
     project: 'tsconfig.json',
     tsconfigRootDir: __dirname,
     sourceType: 'module',
+    extraFileExtensions: ['.json'],
   },
   plugins: ['@typescript-eslint/eslint-plugin'],
   extends: ['plugin:@typescript-eslint/recommended', 'plugin:prettier/recommended'],
@@ -12,7 +13,7 @@ module.exports = {
     node: true,
     jest: true,
   },
-  ignorePatterns: ['.eslintrc.js'],
+  ignorePatterns: ['.eslintrc.js', '*.json'],
   rules: {
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
@@ -20,6 +21,8 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': 'warn', // rule for function returnType
     'no-console': 'warn',
     '@typescript-eslint/no-unused-vars': 'warn',
+    '@typescript-eslint/no-var-requires': 'warn',
+    '@typescript-eslint/no-unnecessary-type-constraint': 'warn',
 
     'prettier/prettier': [
       'warn',
