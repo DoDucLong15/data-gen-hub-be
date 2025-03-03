@@ -14,7 +14,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { StudentsService } from './students.service';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { Roles } from 'src/auth/decorators/role.decorator';
@@ -75,6 +75,10 @@ export class StudentsController {
       },
     }),
   )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    type: ImportListStudentRequest,
+  })
   async importList(
     @Body() request: ImportListStudentRequest,
     @User() user: UserPayload,
@@ -91,6 +95,10 @@ export class StudentsController {
       },
     }),
   )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    type: ExportListStudentRequest,
+  })
   async exportList(
     @Body() request: ExportListStudentRequest,
     @User() user: UserPayload,

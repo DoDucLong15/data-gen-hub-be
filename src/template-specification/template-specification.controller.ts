@@ -12,7 +12,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { TemplateSpecificationService } from './template-specification.service';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { Roles } from 'src/auth/decorators/role.decorator';
@@ -36,7 +36,17 @@ export class TemplateSpecificationController {
   constructor(private readonly templateSpecificationService: TemplateSpecificationService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 1024 * 1024 * 5,
+      },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    type: CreateTemplateSpecificationDto,
+  })
   async create(
     @Body() request: CreateTemplateSpecificationDto,
     @UploadedFile() file: Express.Multer.File,
@@ -46,7 +56,17 @@ export class TemplateSpecificationController {
   }
 
   @Patch()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 1024 * 1024 * 5,
+      },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    type: UpdateTemplateSpecificationDto,
+  })
   async update(
     @Body() request: UpdateTemplateSpecificationDto,
     @UploadedFile() file: Express.Multer.File,

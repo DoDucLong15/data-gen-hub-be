@@ -140,6 +140,9 @@ export class StudentsService {
     user: UserPayload,
   ): Promise<BaseResponse> {
     try {
+      if(!files || files.length === 0) {
+        throw new BadRequestException('Files are required');
+      }
       const _class = await this.classService.getOne({
         where: {
           id: request.classId,
@@ -201,6 +204,9 @@ export class StudentsService {
     res: Response,
   ): Promise<void> {
     try {
+      if(!file) {
+        throw new BadRequestException('File is required');
+      }
       const students = await this.getMany({
         where: {
           ...(request.studentIds && { id: In(request.studentIds) }),

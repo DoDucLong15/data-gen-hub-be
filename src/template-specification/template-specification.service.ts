@@ -31,9 +31,6 @@ export class TemplateSpecificationService {
     if (!file) {
       throw new BadRequestException('File is required');
     }
-    if (file.size > 5 * 1024 * 1024) {
-      throw new BadRequestException('File size must not exceed 5MB');
-    }
     if (!MimeType[request.fileType].includes(file.mimetype)) {
       throw new BadRequestException('Invalid file type');
     }
@@ -138,9 +135,6 @@ export class TemplateSpecificationService {
       ...request,
     };
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        throw new BadRequestException('File size must not exceed 5MB');
-      }
       if (!MimeType[newTemplate.fileType].includes(file.mimetype)) {
         throw new BadRequestException('Invalid file type');
       }
