@@ -24,7 +24,7 @@ import { User } from 'src/auth/decorators/user.decorator';
 import { UserPayload } from 'src/auth/types/user-playload.type';
 import { StudentEntity } from './entities/student.entity';
 import { BaseResponse } from 'src/base/types/response.type';
-import { ImportListStudentRequest } from './dtos/import-data.dto';
+import { ImportListStudentRequest, ImportStudentFormDataRequest } from './dtos/import-data.dto';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ExportListStudentRequest, ExportStudentFormDataRequest } from './dtos/export-data.dto';
 import { Response } from 'express';
@@ -116,5 +116,25 @@ export class StudentsController {
     @Res() res: Response,
   ): Promise<void> {
     return await this.studentsService.generateStudentFormData(request, user, res);
+  }
+
+  @Post('import/single')
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      limits: {
+        fileSize: 1024 * 1024 * 10,
+      },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    type: ImportStudentFormDataRequest,
+  })
+  async importStudentFormData(
+    @Body() request: ImportStudentFormDataRequest,
+    @User() user: UserPayload,
+    @UploadedFiles() files: Express.Multer.File[],
+  ): Promise<BaseResponse> {
+    return await this.studentsService.importStudentFormData(files, request, user);
   }
 }

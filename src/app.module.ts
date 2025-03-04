@@ -16,6 +16,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TemplateSpecificationModule } from './template-specification/template-specification.module';
 import { OfficeModule } from './office/office.module';
 import { StudentsModule } from './students/students.module';
+import { ThesisManagementModule } from './thesis-management/thesis-management.module';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -46,6 +47,7 @@ const environment = process.env.NODE_ENV ?? 'local';
     TemplateSpecificationModule,
     OfficeModule,
     StudentsModule,
+    ThesisManagementModule,
   ],
   controllers: [AppController],
   providers: [AppService],

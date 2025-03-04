@@ -351,4 +351,57 @@ export class ExcelStrategy implements OfficeStrategy {
       Logger.verbose(`Exported single to Excel`, 'ExcelStrategy.exportSingle');
     }
   }
+
+  async importSingle<T extends unknown>(
+    file: Express.Multer.File,
+    template: JsonMappingSingleType,
+  ): Promise<T> {
+    try {
+      Logger.verbose(
+        `Importing single from Excel file ${file.originalname} with template ${JSON.stringify(template)}`,
+      );
+      const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+      if (!template.sheets?.length) {
+        Logger.warn(
+          `No sheets found in template ${JSON.stringify(template)}`,
+          'ExcelStrategy.importSingle',
+        );
+        throw new Error('No sheets found in template');
+      }
+      const result: Record<string, any> = {};
+      for (const sheet of template.sheets) {
+        if (!sheet.mapping || !sheet.mapping.cells) continue;
+        const names: string[] = [];
+        if (!sheet.name) {
+          workbook.SheetNames.forEach((name) => {
+            if (workbook.Sheets[name]['!hidden'] !== 0) return; // Skip hidden sheets
+            names.push(name);
+          });
+        } else if (sheet.name.startsWith('*')) {
+          const index = parseInt(sheet.name.substring(1));
+          if (index < workbook.SheetNames.length) {
+            names.push(workbook.SheetNames[index]);
+          }
+        } else {
+          names.push(sheet.name);
+        }
+        for (const sheetName of names) {
+          const workSheet: XLSX.WorkSheet = workbook.Sheets[sheetName];
+          if (!workSheet) continue;
+          for (const cell of sheet.mapping.cells) {
+            const value = workSheet[cell.cell]?.v;
+            if (cell.dbField) result[cell.dbField] = cell.const ?? value;
+          }
+        }
+      }
+      return result as T;
+    } catch (error) {
+      throw new Error(`Error importing single from Excel: ${error.message}`);
+    } finally {
+      Logger.verbose(
+        `Imported single from Excel file ${file.originalname}`,
+        'ExcelStrategy.importSingle',
+      );
+    }
+  }
 }
