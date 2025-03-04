@@ -2,6 +2,10 @@ import { CommonUtils } from 'src/utils/common.util';
 import { SystemConfigEntity } from '../entities/system-config.entity';
 import { InternalServerErrorException, Logger } from '@nestjs/common';
 import { TemplateSpecificationEntity } from 'src/template-specification/entities/template-specification.entity';
+import { JsonMappingListType } from 'src/office/types/json-mapping-list.type';
+import { JsonMappingSingleType } from 'src/template-specification/types/json.type';
+import { TemplateSpecificationImportListStudent } from 'src/office/constants/template-list-student.const';
+import { TemplateSpecificationImportSingleStudent } from 'src/office/constants/template-single-student.const';
 
 export class SystemConfigUtils {
   public static logoUrl: string;
@@ -9,6 +13,12 @@ export class SystemConfigUtils {
   public static loginUrl: string;
   public static defaultTemplateSpecification: TemplateSpecificationEntity[];
   public static defaultListTemplateFilePaths: string[];
+  public static defaultTemplateSpecificationImportListStudent: JsonMappingListType =
+    TemplateSpecificationImportListStudent;
+  public static defaultTemplateSpecificationImportSingleStudent: Record<
+    string,
+    JsonMappingSingleType
+  > = TemplateSpecificationImportSingleStudent;
 
   static getValue(entity: SystemConfigEntity): string | number | boolean | any {
     if (CommonUtils.isNotNullish(entity.stringValue)) return entity.stringValue;

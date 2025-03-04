@@ -13,4 +13,8 @@ export interface OfficeStrategy {
     templateFile: Partial<Express.Multer.File>,
     template: JsonMappingSingleType,
   ): Promise<Partial<Express.Multer.File>>;
+  importSingle<T extends any>(
+    file: Express.Multer.File,
+    template: JsonMappingSingleType,
+  ): Promise<T>;
 }

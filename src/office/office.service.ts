@@ -66,4 +66,12 @@ export class OfficeService {
     const strategy = this.getStrategyByMimeType(templateFile.mimetype!);
     return await strategy.exportSingle<T>(data, templateFile, template);
   }
+
+  async importSingle<T extends any>(
+    file: Express.Multer.File,
+    template: JsonMappingSingleType,
+  ): Promise<T> {
+    const strategy = this.getStrategyByMimeType(file.mimetype);
+    return await strategy.importSingle<T>(file, template);
+  }
 }

@@ -57,6 +57,24 @@ export class SystemConfigurationService {
               'SystemConfigService',
             );
           }
+        } else if (config.key === Keys.DEFAULT_TEMPLATE_SPECIFICATION_IMPORT_LIST_STUDENT) {
+          const jsonValue = SCU.getJson(config);
+          if (jsonValue) {
+            SystemConfigUtils.defaultTemplateSpecificationImportListStudent = jsonValue;
+            Logger.verbose(
+              `Updated DEFAULT_TEMPLATE_SPECIFICATION_IMPORT_LIST_STUDENT`,
+              'SystemConfigService',
+            );
+          }
+        } else if (config.key === Keys.DEFAULT_TEMPLATE_SPECIFICATION_IMPORT_SINGLE_STUDENT) {
+          const jsonValue = SCU.getJson(config);
+          if (jsonValue) {
+            SystemConfigUtils.defaultTemplateSpecificationImportSingleStudent = jsonValue;
+            Logger.verbose(
+              `Updated DEFAULT_TEMPLATE_SPECIFICATION_IMPORT_SINGLE_STUDENT`,
+              'SystemConfigService',
+            );
+          }
         }
       }
     } catch (error) {

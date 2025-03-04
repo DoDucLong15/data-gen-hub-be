@@ -27,4 +27,11 @@ export class WordStrategy implements OfficeStrategy {
   ): Promise<Partial<Express.Multer.File>> {
     throw new Error('Method not implemented.');
   }
+
+  async importSingle<T extends unknown>(
+    file: Express.Multer.File,
+    template: JsonMappingSingleType,
+  ): Promise<T> {
+    throw new Error('Method not implemented.');
+  }
 }

@@ -9,13 +9,16 @@ import { BaseResponse } from 'src/base/types/response.type';
 import { OfficeService } from 'src/office/office.service';
 import { TemplateSpecificationImportListStudent } from 'src/office/constants/template-list-student.const';
 import { JsonMappingListType } from 'src/office/types/json-mapping-list.type';
-import { ImportListStudentRequest } from './dtos/import-data.dto';
+import { ImportListStudentRequest, ImportStudentFormDataRequest } from './dtos/import-data.dto';
 import { AsyncUtils } from 'src/utils/async.utils';
 import { ExportListStudentRequest, ExportStudentFormDataRequest } from './dtos/export-data.dto';
 import { Response } from 'express';
 import { TemplateSpecificationService } from 'src/template-specification/template-specification.service';
 import { StorageService } from 'src/storage/storage.service';
 import { streamToBuffer } from 'src/storage/helpers/convert.helper';
+import { CommonUtils } from 'src/utils/common.util';
+import { TemplateSpecificationImportSingleStudent } from 'src/office/constants/template-single-student.const';
+import { JsonMappingSingleType } from 'src/template-specification/types/json.type';
 const archiver = require('archiver');
 
 @Injectable()
@@ -161,7 +164,8 @@ export class StudentsService {
         throw new BadRequestException(`Class ${request.classId} not found`);
       }
       const newStudents: StudentEntity[] = [];
-      for (const file of files) {
+      const unzipFiles = await CommonUtils.unzip(files);
+      for (const file of unzipFiles) {
         const data = await this.officeService.importList<StudentEntity>(
           file,
           TemplateSpecificationImportListStudent as JsonMappingListType,
@@ -311,6 +315,59 @@ export class StudentsService {
         status: 'error',
         message: `Error generating student form data: ${error.message}`,
       });
+    }
+  }
+
+  async importStudentFormData(
+    files: Express.Multer.File[],
+    request: ImportStudentFormDataRequest,
+    user: UserPayload,
+  ): Promise<BaseResponse> {
+    try {
+      if (!files || files.length === 0) {
+        throw new BadRequestException('Files are required');
+      }
+      const _class = await this.classService.getOne({
+        where: {
+          id: request.classId,
+          teacher: {
+            email: user.email,
+          },
+        },
+      });
+      if (!_class) {
+        throw new BadRequestException(`Class ${request.classId} not found`);
+      }
+      const unzipFiles = await CommonUtils.unzip(files);
+      const result: any[] = [];
+      for (const file of unzipFiles) {
+        try {
+          Logger.debug(
+            `Importing student form data from ${file.originalname}`,
+            'StudentsService.importStudentFormData',
+          );
+          const data = await this.officeService.importSingle<any>(
+            file,
+            TemplateSpecificationImportSingleStudent[request.type] as JsonMappingSingleType,
+          );
+          result.push(data);
+        } catch (error) {
+          Logger.error(error.message, error.stack, 'StudentsService.importStudentFormData');
+        } finally {
+          await AsyncUtils.delay(1000);
+        }
+      }
+      return {
+        status: 'success',
+        message: 'Imported student form data successfully',
+        data: result,
+      };
+    } catch (error) {
+      Logger.error(error.message, error.stack, 'StudentsService.importStudentFormData');
+      return {
+        status: 'error',
+        message: `Error importing student form data: ${error.message}`,
+      };
     }
   }
 }
