@@ -34,7 +34,7 @@ export class ExcelStrategy implements OfficeStrategy {
         const names: string[] = [];
         if (!sheet.name) {
           workbook.SheetNames.forEach((name) => {
-            if (workbook.Sheets[name]['!hidden'] !== 0) return; // Skip hidden sheets
+            if (workbook.Sheets[name]['!hidden'] && workbook.Sheets[name]['!hidden'] !== 0) return; // Skip hidden sheets
             names.push(name);
           });
         } else if (sheet.name.startsWith('*')) {
@@ -216,7 +216,6 @@ export class ExcelStrategy implements OfficeStrategy {
             maxCol = range.e.c;
             maxRow = range.e.r;
           }
-          console.log(minRow);
           for (let row = minRow; row < list.length + minRow; row++) {
             for (const column of sheet.mapping.columns) {
               const value =
@@ -374,7 +373,7 @@ export class ExcelStrategy implements OfficeStrategy {
         const names: string[] = [];
         if (!sheet.name) {
           workbook.SheetNames.forEach((name) => {
-            if (workbook.Sheets[name]['!hidden'] !== 0) return; // Skip hidden sheets
+            if (workbook.Sheets[name]['!hidden'] && workbook.Sheets[name]['!hidden'] !== 0) return; // Skip hidden sheets
             names.push(name);
           });
         } else if (sheet.name.startsWith('*')) {
