@@ -19,6 +19,7 @@ import { streamToBuffer } from 'src/storage/helpers/convert.helper';
 import { CommonUtils } from 'src/utils/common.util';
 import { TemplateSpecificationImportSingleStudent } from 'src/office/constants/template-single-student.const';
 import { JsonMappingSingleType } from 'src/template-specification/types/json.type';
+import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.util';
 const archiver = require('archiver');
 
 @Injectable()
@@ -168,7 +169,7 @@ export class StudentsService {
       for (const file of unzipFiles) {
         const data = await this.officeService.importList<StudentEntity>(
           file,
-          TemplateSpecificationImportListStudent as JsonMappingListType,
+          SystemConfigUtils.defaultTemplateSpecificationImportListStudent,
         );
         data.forEach((student) => newStudents.push(student));
         await AsyncUtils.delay(1000);
@@ -348,9 +349,11 @@ export class StudentsService {
           );
           const data = await this.officeService.importSingle<any>(
             file,
-            TemplateSpecificationImportSingleStudent[request.type] as JsonMappingSingleType,
+            SystemConfigUtils.defaultTemplateSpecificationImportSingleStudent[
+              request.type
+            ] as JsonMappingSingleType,
           );
-          result.push(data);
+          if (data && Object.keys(data).length) result.push(data);
         } catch (error) {
           Logger.error(error.message, error.stack, 'StudentsService.importStudentFormData');
         } finally {
