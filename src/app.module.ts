@@ -17,6 +17,7 @@ import { TemplateSpecificationModule } from './template-specification/template-s
 import { OfficeModule } from './office/office.module';
 import { StudentsModule } from './students/students.module';
 import { ThesisManagementModule } from './thesis-management/thesis-management.module';
+import { PythonScriptModule } from './python-script/python-script.module';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -48,6 +49,7 @@ const environment = process.env.NODE_ENV ?? 'local';
     OfficeModule,
     StudentsModule,
     ThesisManagementModule,
+    PythonScriptModule,
   ],
   controllers: [AppController],
   providers: [AppService],
