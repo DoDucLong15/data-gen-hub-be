@@ -12,6 +12,7 @@ import { UserPayload } from 'src/auth/types/user-playload.type';
 import { MimeType } from './constants/mime-type.const';
 import { getFilePath } from './helpers/file-path.helper';
 import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.util';
+import { ActionEnum } from './enums/action.enum';
 
 @Injectable()
 export class TemplateSpecificationService {
@@ -25,22 +26,12 @@ export class TemplateSpecificationService {
 
   async create(
     request: CreateTemplateSpecificationDto,
-    file: Express.Multer.File,
+    templateFile: Express.Multer.File,
+    jsonFile: Express.Multer.File,
     user: UserPayload,
   ): Promise<TemplateSpecificationEntity> {
-    if (!file) {
+    if (!jsonFile || (request.action === ActionEnum.EXPORT && !templateFile)) {
       throw new BadRequestException('File is required');
-    }
-    if (!MimeType[request.fileType].includes(file.mimetype)) {
-      throw new BadRequestException('Invalid file type');
-    }
-    const fileUpload = await this.storageService.uploadDataToFile(
-      file.buffer,
-      file.mimetype,
-      getFilePath(file.originalname),
-    );
-    if (!fileUpload) {
-      throw new BadRequestException('Failed to upload file');
     }
     const _class = await this.classService.getOne({
       where: {
@@ -53,12 +44,39 @@ export class TemplateSpecificationService {
     if (!_class) {
       throw new BadRequestException('Class not found');
     }
+    const templateFileUpload = await this.storageService.uploadDataToFile(
+      templateFile.buffer,
+      templateFile.mimetype,
+      getFilePath(
+        request.classId,
+        request.name,
+        request.action,
+        'template',
+        templateFile.originalname.split('.').pop()!,
+      ),
+    );
+    if (!templateFileUpload) {
+      throw new BadRequestException('Failed to upload template file');
+    }
+    const jsonFileUpload = await this.storageService.uploadDataToFile(
+      jsonFile.buffer,
+      jsonFile.mimetype,
+      getFilePath(
+        request.classId,
+        request.name,
+        request.action,
+        'json',
+        jsonFile.originalname.split('.').pop()!,
+      ),
+    );
+    if (!jsonFileUpload) {
+      throw new BadRequestException('Failed to upload json file');
+    }
+
     return await this.templateSpecificationRepository.save({
       ...request,
-      template: {
-        key: fileUpload.key,
-        url: fileUpload.url,
-      },
+      templateFile: templateFileUpload.key,
+      jsonFile: jsonFileUpload.key,
       class: _class,
     });
   }
@@ -105,11 +123,11 @@ export class TemplateSpecificationService {
     if (!templateSpecification) {
       throw new BadRequestException('Template specification not found');
     }
-    if (
-      !SystemConfigUtils.defaultListTemplateFilePaths ||
-      !SystemConfigUtils.defaultListTemplateFilePaths.includes(templateSpecification.template.key)
-    ) {
-      await this.storageService.deleteFile(templateSpecification.template.key);
+    if (templateSpecification.templateFile) {
+      await this.storageService.deleteFile(templateSpecification.templateFile);
+    }
+    if (templateSpecification.jsonFile) {
+      await this.storageService.deleteFile(templateSpecification.jsonFile);
     }
     await this.templateSpecificationRepository.delete(id);
     return true;
@@ -118,7 +136,8 @@ export class TemplateSpecificationService {
   async update(
     request: UpdateTemplateSpecificationDto,
     user: UserPayload,
-    file?: Express.Multer.File,
+    templateFile?: Express.Multer.File,
+    jsonFile?: Express.Multer.File,
   ): Promise<TemplateSpecificationEntity> {
     const templateSpecification = await this.getOne({
       where: {
@@ -133,34 +152,47 @@ export class TemplateSpecificationService {
     if (!templateSpecification) {
       throw new BadRequestException('Template specification not found');
     }
-    const newTemplate = {
-      ...templateSpecification,
-      ...request,
-    };
-    if (file) {
-      if (!MimeType[newTemplate.fileType].includes(file.mimetype)) {
-        throw new BadRequestException('Invalid file type');
+    if (templateFile) {
+      if (templateSpecification.templateFile) {
+        await this.storageService.deleteFile(templateSpecification.templateFile);
       }
-      if (
-        !SystemConfigUtils.defaultListTemplateFilePaths ||
-        !SystemConfigUtils.defaultListTemplateFilePaths.includes(templateSpecification.template.key)
-      ) {
-        await this.storageService.deleteFile(templateSpecification.template.key);
-      }
-      const fileUpload = await this.storageService.uploadDataToFile(
-        file.buffer,
-        file.mimetype,
-        getFilePath(file.originalname),
+      const templateFileUpload = await this.storageService.uploadDataToFile(
+        templateFile.buffer,
+        templateFile.mimetype,
+        getFilePath(
+          templateSpecification.classId,
+          templateSpecification.name,
+          templateSpecification.action,
+          'template',
+          templateFile.originalname.split('.').pop()!,
+        ),
       );
-      if (!fileUpload) {
+      if (!templateFileUpload) {
         throw new BadRequestException('Failed to upload file');
       }
-      newTemplate.template = {
-        key: fileUpload.key,
-        url: fileUpload.url,
-      };
+      templateSpecification.templateFile = templateFileUpload.key;
     }
-    return await this.templateSpecificationRepository.save(newTemplate);
+    if (jsonFile) {
+      if (templateSpecification.jsonFile) {
+        await this.storageService.deleteFile(templateSpecification.jsonFile);
+      }
+      const jsonFileUpload = await this.storageService.uploadDataToFile(
+        jsonFile.buffer,
+        jsonFile.mimetype,
+        getFilePath(
+          templateSpecification.classId,
+          templateSpecification.name,
+          templateSpecification.action,
+          'json',
+          jsonFile.originalname.split('.').pop()!,
+        ),
+      );
+      if (!jsonFileUpload) {
+        throw new BadRequestException('Failed to upload file');
+      }
+      templateSpecification.jsonFile = jsonFileUpload.key;
+    }
+    return await this.templateSpecificationRepository.save(templateSpecification);
   }
 
   async _save(entities: TemplateSpecificationEntity[]): Promise<boolean> {

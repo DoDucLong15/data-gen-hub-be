@@ -29,10 +29,7 @@ export class ClassService {
       ...request,
       teacher,
     });
-    if (
-      SystemConfigUtils.defaultTemplateSpecification &&
-      SystemConfigUtils.defaultListTemplateFilePaths
-    ) {
+    if (SystemConfigUtils.defaultTemplateSpecification) {
       this.templateSpecificationService
         ._save(
           SystemConfigUtils.defaultTemplateSpecification.map((template) => {

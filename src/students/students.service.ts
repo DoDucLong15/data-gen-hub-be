@@ -280,14 +280,20 @@ export class StudentsService {
         },
       });
       // Download file
-      const readable = await this.storageService.downloadFile(templateSpecification?.template?.key);
+      const readable = await this.storageService.downloadFile(templateSpecification.templateFile);
       if (!readable) {
         throw new BadRequestException('Failed to download template file');
       }
-      const metadata = await this.storageService.getMetadata(templateSpecification?.template?.key);
+      const metadata = await this.storageService.getMetadata(templateSpecification.templateFile);
       if (!metadata) {
         throw new BadRequestException('Failed to get metadata of template file');
       }
+      const jsonFile = await this.storageService.downloadFile(templateSpecification.jsonFile);
+      if (!jsonFile) {
+        throw new BadRequestException('Failed to download json file');
+      }
+      const jsonBuffer = await streamToBuffer(jsonFile);
+      const jsonMapping = JSON.parse(jsonBuffer.toString()) as JsonMappingSingleType;
       const buffer = await streamToBuffer(readable);
       const file: Partial<Express.Multer.File> = {
         buffer: buffer,
@@ -305,7 +311,7 @@ export class StudentsService {
         const result = await this.officeService.exportSingle<StudentEntity>(
           student,
           file,
-          templateSpecification.jsonMapping,
+          jsonMapping,
         );
         archive.append(result.buffer, { name: result.originalname });
       }
