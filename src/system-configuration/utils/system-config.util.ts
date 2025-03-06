@@ -6,12 +6,13 @@ import { JsonMappingListType } from 'src/office/types/json-mapping-list.type';
 import { JsonMappingSingleType } from 'src/template-specification/types/json.type';
 import { TemplateSpecificationImportListStudent } from 'src/office/constants/template-list-student.const';
 import { TemplateSpecificationImportSingleStudent } from 'src/office/constants/template-single-student.const';
+import { DefaultTemplateSpecification } from 'src/template-specification/constants/default.const';
 
 export class SystemConfigUtils {
   public static logoUrl: string;
   public static systemName: string;
   public static loginUrl: string;
-  public static defaultTemplateSpecification: TemplateSpecificationEntity[];
+  public static defaultTemplateSpecification = DefaultTemplateSpecification;
   public static defaultListTemplateFilePaths: string[];
   public static defaultTemplateSpecificationImportListStudent: JsonMappingListType =
     TemplateSpecificationImportListStudent;

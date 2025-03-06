@@ -4,6 +4,7 @@ import { JsonMappingSingleType } from '../types/json.type';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { transformToJSON } from 'src/base/transformers/dto.transformer';
+import { ActionEnum } from '../enums/action.enum';
 
 export class CreateTemplateSpecificationDto {
   @IsNotEmpty()
@@ -11,25 +12,28 @@ export class CreateTemplateSpecificationDto {
   name: string;
 
   @IsNotEmpty()
-  @IsEnum(FileTypes)
-  fileType: FileTypes;
-
-  @IsNotEmpty()
-  @IsObject()
-  @Transform(transformToJSON)
-  jsonMapping: JsonMappingSingleType;
+  @IsEnum(ActionEnum)
+  action: ActionEnum;
 
   @IsNotEmpty()
   @IsString()
   classId: string;
 
   @ApiProperty({ type: 'string', format: 'binary', required: true })
-  @IsOptional()
-  file: any;
+  templateFile: any;
+
+  @ApiProperty({ type: 'string', format: 'binary', required: true })
+  jsonFile: any;
 }
 
-export class UpdateTemplateSpecificationDto extends PartialType(CreateTemplateSpecificationDto) {
+export class UpdateTemplateSpecificationDto {
   @IsNotEmpty()
   @IsString()
   id: string;
+
+  @ApiProperty({ type: 'string', format: 'binary', required: false })
+  templateFile: any;
+
+  @ApiProperty({ type: 'string', format: 'binary', required: false })
+  jsonFile: any;
 }

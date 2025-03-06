@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -17,7 +18,7 @@ import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { Roles } from 'src/auth/decorators/role.decorator';
 import { RoleTypes } from 'src/users/enums/role-types.enum';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import {
   CreateTemplateSpecificationDto,
   UpdateTemplateSpecificationDto,
@@ -37,11 +38,17 @@ export class TemplateSpecificationController {
 
   @Post()
   @UseInterceptors(
-    FileInterceptor('file', {
-      limits: {
-        fileSize: 1024 * 1024 * 5,
+    FileFieldsInterceptor(
+      [
+        { name: 'jsonFile', maxCount: 1 },
+        { name: 'templateFile', maxCount: 1 },
+      ],
+      {
+        limits: {
+          fileSize: 1024 * 1024 * 5,
+        },
       },
-    }),
+    ),
   )
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -49,19 +56,34 @@ export class TemplateSpecificationController {
   })
   async create(
     @Body() request: CreateTemplateSpecificationDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles()
+    files: {
+      jsonFile: Express.Multer.File[];
+      templateFile: Express.Multer.File[];
+    },
     @User() user: UserPayload,
   ): Promise<TemplateSpecificationEntity> {
-    return await this.templateSpecificationService.create(request, file, user);
+    return await this.templateSpecificationService.create(
+      request,
+      files?.templateFile?.[0],
+      files?.jsonFile?.[0],
+      user,
+    );
   }
 
   @Patch()
   @UseInterceptors(
-    FileInterceptor('file', {
-      limits: {
-        fileSize: 1024 * 1024 * 5,
+    FileFieldsInterceptor(
+      [
+        { name: 'jsonFile', maxCount: 1 },
+        { name: 'templateFile', maxCount: 1 },
+      ],
+      {
+        limits: {
+          fileSize: 1024 * 1024 * 5,
+        },
       },
-    }),
+    ),
   )
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -69,10 +91,19 @@ export class TemplateSpecificationController {
   })
   async update(
     @Body() request: UpdateTemplateSpecificationDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles()
+    files: {
+      jsonFile: Express.Multer.File[];
+      templateFile: Express.Multer.File[];
+    },
     @User() user: UserPayload,
   ): Promise<TemplateSpecificationEntity> {
-    return await this.templateSpecificationService.update(request, user, file);
+    return await this.templateSpecificationService.update(
+      request,
+      user,
+      files?.templateFile?.[0],
+      files?.jsonFile?.[0],
+    );
   }
 
   @Delete(':id')

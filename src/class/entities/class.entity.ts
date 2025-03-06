@@ -36,4 +36,7 @@ export class ClassEntity extends AbstractAuditingEntity {
     cascade: true,
   })
   students: StudentEntity[];
+
+  @Column({ type: 'varchar', array: true, name: 'student_paths', nullable: true })
+  studentPaths: string[];
 }
