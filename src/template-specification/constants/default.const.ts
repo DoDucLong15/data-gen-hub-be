@@ -11,7 +11,7 @@ export const DefaultTemplateSpecification: Partial<TemplateSpecificationEntity>[
   {
     name: 'DSSV',
     action: ActionEnum.IMPORT,
-    jsonFile: 'data-gen-hub/common/specification/pgnv/import/json_import.json',
+    jsonFile: 'data-gen-hub/common/specification/dssv/import/json_import.json',
   },
   {
     name: 'PGNV',
