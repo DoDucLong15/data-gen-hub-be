@@ -7,9 +7,12 @@ import * as ExcelJS from 'exceljs';
 import { columnLetterToNumber } from '../helpers/office.helper';
 import { JsonMappingSingleType } from 'src/template-specification/types/json.type';
 import { CommonUtils } from 'src/utils/common.util';
+import { PythonScriptService } from 'src/python-script/python-script.service';
+import { OfficePathScript } from '../constants/script-path-offcie.const';
+import { ThesisDocumentEnum } from 'src/thesis-management/enums/thesis-document.enum';
 
 export class ExcelStrategy implements OfficeStrategy {
-  constructor() {}
+  constructor(private readonly pythonScriptService: PythonScriptService) {}
 
   async importList<T extends any>(
     file: Express.Multer.File,
@@ -401,6 +404,108 @@ export class ExcelStrategy implements OfficeStrategy {
         `Imported single from Excel file ${file.originalname}`,
         'ExcelStrategy.importSingle',
       );
+    }
+  }
+
+  async importListByScript(
+    inputPath: string,
+    specificationPath: string,
+    classId: string,
+  ): Promise<void> {
+    try {
+      Logger.verbose(
+        `Importing list by script with input ${inputPath} and specification ${specificationPath}`,
+        'ExcelStrategy.importListByScript',
+      );
+      const output = await this.pythonScriptService.runPythonScript(OfficePathScript.LIST_TO_DB, [
+        '-s',
+        specificationPath,
+        '-t',
+        inputPath,
+        '-c',
+        classId,
+      ]);
+      Logger.verbose(output, 'ExcelStrategy.importListByScript');
+    } catch (error) {
+      throw new Error(`Error importing list by script: ${error.message}`);
+    }
+  }
+  async exportListByScript(
+    classId: string,
+    templatePath: string,
+    specificationPath: string,
+  ): Promise<void> {
+    try {
+      Logger.verbose(
+        `Exporting list by script with template ${templatePath} and specification ${specificationPath}`,
+        'ExcelStrategy.exportListByScript',
+      );
+      const output = await this.pythonScriptService.runPythonScript(OfficePathScript.DB_TO_LIST, [
+        '-s',
+        specificationPath,
+        '-t',
+        templatePath,
+        '-c',
+        classId,
+        '-o',
+        `data-gen-hub/${classId}/students/output`,
+      ]);
+      Logger.verbose(output, 'ExcelStrategy.exportListByScript');
+    } catch (error) {
+      throw new Error(`Error exporting list by script: ${error.message}`);
+    }
+  }
+  async exportSingleByScript(
+    classId: string,
+    templatePath: string,
+    specificationPath: string,
+    thesisType: ThesisDocumentEnum,
+    extraData?: any,
+  ): Promise<void> {
+    try {
+      Logger.verbose(
+        `Exporting single by script with template ${templatePath} and specification ${specificationPath}`,
+        'ExcelStrategy.exportSingleByScript',
+      );
+      const output = await this.pythonScriptService.runPythonScript(OfficePathScript.DB_TO_EXCEL, [
+        '-s',
+        specificationPath,
+        '-t',
+        templatePath,
+        '-c',
+        classId,
+        '-o',
+        `data-gen-hub/${classId}/${thesisType}/output`,
+        ...(extraData ? ['-e', JSON.stringify(extraData)] : []),
+        '-b',
+        thesisType,
+      ]);
+      Logger.verbose(output, 'ExcelStrategy.exportSingleByScript');
+    } catch (error) {
+      throw new Error(`Error exporting single by script: ${error.message}`);
+    }
+  }
+  async importSingleByScript(
+    inputPath: string,
+    specificationPath: string,
+    classId: string,
+  ): Promise<void> {
+    try {
+      Logger.verbose(
+        `Importing single by script with input ${inputPath} and specification ${specificationPath}`,
+        'ExcelStrategy.importSingleByScript',
+      );
+      const output = await this.pythonScriptService.runPythonScript(OfficePathScript.EXCEL_TO_DB, [
+        '-s',
+        specificationPath,
+        '-t',
+        inputPath,
+        '-c',
+        classId,
+      ]);
+      Logger.verbose(output, 'ExcelStrategy.importSingleByScript');
+    } catch (error) {
+      throw new Error(`Error importing single by script: ${error.message}`);
     }
   }
 }

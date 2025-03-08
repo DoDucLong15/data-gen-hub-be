@@ -1,5 +1,5 @@
 import { PartialType } from '@nestjs/swagger';
-import { isNotEmpty, IsNotEmpty, IsString } from 'class-validator';
+import { IsArray, isNotEmpty, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateClassDto {
   @IsNotEmpty()
@@ -17,6 +17,10 @@ export class CreateClassDto {
   @IsNotEmpty()
   @IsString()
   semester: string;
+
+  @IsOptional()
+  @IsArray()
+  studentPaths: string[];
 }
 
 export class UpdateClassDto extends PartialType(CreateClassDto) {

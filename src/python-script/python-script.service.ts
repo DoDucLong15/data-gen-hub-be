@@ -9,10 +9,8 @@ export class PythonScriptService {
   private environment = process.env.NODE_ENV ?? 'local';
   constructor() {}
 
-  async runPythonScript(scriptPath: string, args: any): Promise<string> {
+  async runPythonScript(scriptPath: string, args?: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
-      const argsArray = [JSON.stringify(args)];
-
       const fullPath = path.resolve(scriptPath);
       const venvPath =
         os.platform() === 'win32'
@@ -21,7 +19,7 @@ export class PythonScriptService {
       // Chạy Python script
       const process = spawn(this.environment === 'local' ? venvPath : this.pythonCommand, [
         fullPath,
-        ...argsArray,
+        ...(args || []),
       ]);
       Logger.log(
         `Running python script: ${process.spawnargs.join(' ')}`,
@@ -45,6 +43,7 @@ export class PythonScriptService {
         if (code === 0) {
           resolve(output.trim());
         } else {
+          console.log(output);
           reject(new Error(error || `Python script exited with code ${code}`));
         }
       });

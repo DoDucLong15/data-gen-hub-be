@@ -9,9 +9,7 @@ export class PythonScriptController {
 
   @Get('test')
   async testPythonScript() {
-    const data = await this.pythonScriptService.runPythonScript('../python-script/main.py', {
-      message: 'Hello from NestJS',
-    });
+    const data = await this.pythonScriptService.runPythonScript('../python-script/main.py');
     return JSON.parse(data);
   }
 }

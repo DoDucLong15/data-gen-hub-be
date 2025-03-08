@@ -5,5 +5,6 @@ import { PythonScriptController } from './python-script.controller';
 @Module({
   controllers: [PythonScriptController],
   providers: [PythonScriptService],
+  exports: [PythonScriptService],
 })
 export class PythonScriptModule {}

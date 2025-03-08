@@ -1,9 +1,11 @@
 import { JsonMappingSingleType } from 'src/template-specification/types/json.type';
 import { OfficeStrategy } from '../interfaces/office.interface';
 import { JsonMappingListType } from '../types/json-mapping-list.type';
+import { PythonScriptService } from 'src/python-script/python-script.service';
+import { ThesisDocumentEnum } from 'src/thesis-management/enums/thesis-document.enum';
 
 export class WordStrategy implements OfficeStrategy {
-  constructor() {}
+  constructor(private readonly pythonScriptService: PythonScriptService) {}
 
   async importList<T extends any>(
     file: Express.Multer.File,
@@ -32,6 +34,36 @@ export class WordStrategy implements OfficeStrategy {
     file: Express.Multer.File,
     template: JsonMappingSingleType,
   ): Promise<T> {
+    throw new Error('Method not implemented.');
+  }
+
+  async importListByScript(
+    inputPath: string,
+    specificationPath: string,
+    classId: string,
+  ): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  async exportListByScript(
+    classId: string,
+    templatePath: string,
+    specificationPath: string,
+  ): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  async exportSingleByScript(
+    classId: string,
+    templatePath: string,
+    specificationPath: string,
+    thesisType: ThesisDocumentEnum,
+  ): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  async importSingleByScript(
+    inputPath: string,
+    specificationPath: string,
+    classId: string,
+  ): Promise<void> {
     throw new Error('Method not implemented.');
   }
 }
