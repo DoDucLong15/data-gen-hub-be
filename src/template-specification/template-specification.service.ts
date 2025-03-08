@@ -123,10 +123,16 @@ export class TemplateSpecificationService {
     if (!templateSpecification) {
       throw new BadRequestException('Template specification not found');
     }
-    if (templateSpecification.templateFile) {
+    if (
+      templateSpecification.templateFile &&
+      !templateSpecification.templateFile.includes('data-gen-hub/common')
+    ) {
       await this.storageService.deleteFile(templateSpecification.templateFile);
     }
-    if (templateSpecification.jsonFile) {
+    if (
+      templateSpecification.jsonFile &&
+      !templateSpecification.jsonFile.includes('data-gen-hub/common')
+    ) {
       await this.storageService.deleteFile(templateSpecification.jsonFile);
     }
     await this.templateSpecificationRepository.delete(id);
@@ -153,7 +159,10 @@ export class TemplateSpecificationService {
       throw new BadRequestException('Template specification not found');
     }
     if (templateFile) {
-      if (templateSpecification.templateFile) {
+      if (
+        templateSpecification.templateFile &&
+        !templateSpecification.templateFile.includes('data-gen-hub/common')
+      ) {
         await this.storageService.deleteFile(templateSpecification.templateFile);
       }
       const templateFileUpload = await this.storageService.uploadDataToFile(
@@ -173,7 +182,10 @@ export class TemplateSpecificationService {
       templateSpecification.templateFile = templateFileUpload.key;
     }
     if (jsonFile) {
-      if (templateSpecification.jsonFile) {
+      if (
+        templateSpecification.jsonFile &&
+        !templateSpecification.jsonFile.includes('data-gen-hub/common')
+      ) {
         await this.storageService.deleteFile(templateSpecification.jsonFile);
       }
       const jsonFileUpload = await this.storageService.uploadDataToFile(
