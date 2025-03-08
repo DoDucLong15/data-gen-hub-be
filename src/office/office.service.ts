@@ -11,15 +11,17 @@ import { JsonMappingSingleType } from 'src/template-specification/types/json.typ
 import { ImportExportDynamicDto, ImportExportDynamicType } from './dtos/office.dto';
 import { Response } from 'express';
 import { CommonUtils } from 'src/utils/common.util';
+import { PythonScriptService } from 'src/python-script/python-script.service';
+import { FileExtension } from 'src/template-specification/constants/extension.const';
 const archiver = require('archiver');
 
 @Injectable()
 export class OfficeService {
   private officeStrategy: Record<string, OfficeStrategy> = {};
-  constructor() {
-    this.use(OfficeTypeEnum.EXCEL, new ExcelStrategy());
-    this.use(OfficeTypeEnum.WORD, new WordStrategy());
-    this.use(OfficeTypeEnum.HTML, new HtmlStrategy());
+  constructor(private readonly pythonScriptService: PythonScriptService) {
+    this.use(OfficeTypeEnum.EXCEL, new ExcelStrategy(pythonScriptService));
+    this.use(OfficeTypeEnum.WORD, new WordStrategy(pythonScriptService));
+    this.use(OfficeTypeEnum.HTML, new HtmlStrategy(pythonScriptService));
   }
 
   private use(name: string, strategy: OfficeStrategy): void {
@@ -36,6 +38,22 @@ export class OfficeService {
     } else {
       throw new Error(`Strategy not found for mime type ${mimeType}`);
     }
+  }
+
+  private getStrategyByFileExtension(extension: string): OfficeStrategy {
+    if (FileExtension[FileTypes.EXCEL].includes(extension)) {
+      return this.getStrategy(OfficeTypeEnum.EXCEL);
+    } else if (FileExtension[FileTypes.WORD].includes(extension)) {
+      return this.getStrategy(OfficeTypeEnum.WORD);
+    } else if (FileExtension[FileTypes.HTML].includes(extension)) {
+      return this.getStrategy(OfficeTypeEnum.HTML);
+    } else {
+      throw new Error(`Strategy not found for file extension ${extension}`);
+    }
+  }
+
+  private getFileExtension(filePath: string): string {
+    return filePath.split('/').pop()?.split('.').pop() || '';
   }
 
   private getStrategy(name: string): OfficeStrategy {
@@ -138,5 +156,45 @@ export class OfficeService {
         message: `Error generating student form data: ${error.message}`,
       });
     }
+  }
+
+  async importListByScript(
+    inputPath: string,
+    specificationPath: string,
+    classId: string,
+  ): Promise<void> {
+    const fileExt = this.getFileExtension(inputPath);
+    const strategy = this.getStrategyByFileExtension(fileExt);
+    return await strategy.importListByScript(inputPath, specificationPath, classId);
+  }
+
+  async exportListByScript(
+    classId: string,
+    templatePath: string,
+    specificationPath: string,
+  ): Promise<string> {
+    const fileExt = this.getFileExtension(templatePath);
+    const strategy = this.getStrategyByFileExtension(fileExt);
+    return await strategy.exportListByScript(classId, templatePath, specificationPath);
+  }
+
+  async exportSingleByScript(
+    classId: string,
+    templatePath: string,
+    specificationPath: string,
+  ): Promise<void> {
+    const fileExt = this.getFileExtension(templatePath);
+    const strategy = this.getStrategyByFileExtension(fileExt);
+    return await strategy.exportSingleByScript(classId, templatePath, specificationPath);
+  }
+
+  async importSingleByScript(
+    inputPaths: string[],
+    specificationPath: string,
+    classId: string,
+  ): Promise<void> {
+    const fileExt = this.getFileExtension(inputPaths[0]);
+    const strategy = this.getStrategyByFileExtension(fileExt);
+    return await strategy.importSingleByScript(inputPaths, specificationPath, classId);
   }
 }

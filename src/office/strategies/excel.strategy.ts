@@ -7,9 +7,11 @@ import * as ExcelJS from 'exceljs';
 import { columnLetterToNumber } from '../helpers/office.helper';
 import { JsonMappingSingleType } from 'src/template-specification/types/json.type';
 import { CommonUtils } from 'src/utils/common.util';
+import { PythonScriptService } from 'src/python-script/python-script.service';
+import { OfficePathScript } from '../constants/script-path-offcie.const';
 
 export class ExcelStrategy implements OfficeStrategy {
-  constructor() {}
+  constructor(private readonly pythonScriptService: PythonScriptService) {}
 
   async importList<T extends any>(
     file: Express.Multer.File,
@@ -402,5 +404,50 @@ export class ExcelStrategy implements OfficeStrategy {
         'ExcelStrategy.importSingle',
       );
     }
+  }
+
+  async importListByScript(
+    inputPath: string,
+    specificationPath: string,
+    classId: string,
+  ): Promise<void> {
+    try {
+      Logger.verbose(
+        `Importing list by script with input ${inputPath} and specification ${specificationPath}`,
+        'ExcelStrategy.importListByScript',
+      );
+      const output = await this.pythonScriptService.runPythonScript(OfficePathScript.LIST_TO_DB, [
+        '-s',
+        specificationPath,
+        '-t',
+        inputPath,
+        '-c',
+        classId,
+      ]);
+      Logger.verbose(output, 'ExcelStrategy.importListByScript');
+    } catch (error) {
+      throw new Error(`Error importing list by script: ${error.message}`);
+    }
+  }
+  async exportListByScript(
+    classId: string,
+    templatePath: string,
+    specificationPath: string,
+  ): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+  async exportSingleByScript(
+    classId: string,
+    templatePath: string,
+    specificationPath: string,
+  ): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  async importSingleByScript(
+    inputPaths: string[],
+    specificationPath: string,
+    classId: string,
+  ): Promise<void> {
+    throw new Error('Method not implemented.');
   }
 }

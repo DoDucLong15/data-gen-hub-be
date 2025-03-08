@@ -17,4 +17,22 @@ export interface OfficeStrategy {
     file: Express.Multer.File,
     template: JsonMappingSingleType,
   ): Promise<T>;
+
+  // Script
+  importListByScript(inputPath: string, specificationPath: string, classId: string): Promise<void>;
+  exportListByScript(
+    classId: string,
+    templatePath: string,
+    specificationPath: string,
+  ): Promise<string>;
+  exportSingleByScript(
+    classId: string,
+    templatePath: string,
+    specificationPath: string,
+  ): Promise<void>;
+  importSingleByScript(
+    inputPaths: string[],
+    specificationPath: string,
+    classId: string,
+  ): Promise<void>;
 }
