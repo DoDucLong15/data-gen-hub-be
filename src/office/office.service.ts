@@ -172,7 +172,7 @@ export class OfficeService {
     classId: string,
     templatePath: string,
     specificationPath: string,
-  ): Promise<string> {
+  ): Promise<void> {
     const fileExt = this.getFileExtension(templatePath);
     const strategy = this.getStrategyByFileExtension(fileExt);
     return await strategy.exportListByScript(classId, templatePath, specificationPath);

@@ -433,8 +433,26 @@ export class ExcelStrategy implements OfficeStrategy {
     classId: string,
     templatePath: string,
     specificationPath: string,
-  ): Promise<string> {
-    throw new Error('Method not implemented.');
+  ): Promise<void> {
+    try {
+      Logger.verbose(
+        `Exporting list by script with template ${templatePath} and specification ${specificationPath}`,
+        'ExcelStrategy.exportListByScript',
+      );
+      const output = await this.pythonScriptService.runPythonScript(OfficePathScript.DB_TO_LIST, [
+        '-s',
+        specificationPath,
+        '-t',
+        templatePath,
+        '-c',
+        classId,
+        '-o',
+        `data-gen-hub/${classId}/students/output`,
+      ]);
+      Logger.verbose(output, 'ExcelStrategy.exportListByScript');
+    } catch (error) {
+      throw new Error(`Error exporting list by script: ${error.message}`);
+    }
   }
   async exportSingleByScript(
     classId: string,

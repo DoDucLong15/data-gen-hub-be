@@ -39,4 +39,7 @@ export class ClassEntity extends AbstractAuditingEntity {
 
   @Column({ type: 'varchar', array: true, name: 'student_paths', nullable: true })
   studentPaths: string[];
+
+  @Column({ type: 'varchar', name: 'output_path', nullable: true })
+  outputPath: string;
 }

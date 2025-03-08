@@ -33,6 +33,18 @@ export class ExportListStudentRequest {
   file: any;
 }
 
+export class ExportListStudentRequestV2 {
+  @IsNotEmpty()
+  @IsString()
+  classId: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @Transform(transformToArray)
+  studentIds: string[];
+}
+
 export class ExportStudentFormDataRequest {
   @IsNotEmpty()
   @IsString()

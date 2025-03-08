@@ -4,6 +4,10 @@ import { BaseResponse } from 'src/base/types/response.type';
 import { ClassService } from 'src/class/class.service';
 import { OfficeService } from 'src/office/office.service';
 import { StorageService } from 'src/storage/storage.service';
+import {
+  ExportListStudentRequest,
+  ExportListStudentRequestV2,
+} from 'src/students/dtos/export-data.dto';
 import { ImportListStudentRequest } from 'src/students/dtos/import-data.dto';
 import { StudentsService } from 'src/students/students.service';
 import { SpecificationNameEnum } from 'src/template-specification/constants/default.const';
@@ -11,6 +15,8 @@ import { ActionEnum } from 'src/template-specification/enums/action.enum';
 import { TemplateSpecificationService } from 'src/template-specification/template-specification.service';
 import { AsyncUtils } from 'src/utils/async.utils';
 import { CommonUtils } from 'src/utils/common.util';
+import { Response } from 'express';
+import { streamToBuffer } from 'src/storage/helpers/convert.helper';
 
 @Injectable()
 export class StudentServiceV2 {
@@ -81,6 +87,8 @@ export class StudentServiceV2 {
           if (inputPath && inputPath.length) {
             await this.storageService.deleteFile(inputPath);
           }
+        } finally {
+          await AsyncUtils.delay(1000);
         }
       }
       if (inputPaths.length > 0) {
@@ -104,6 +112,71 @@ export class StudentServiceV2 {
         message: `Error importing students: ${error.message}`,
         data: [],
       };
+    }
+  }
+
+  async exportListStudent(
+    request: ExportListStudentRequestV2,
+    user: UserPayload,
+    res: Response,
+  ): Promise<void> {
+    try {
+      const _class = await this.classService.getOne({
+        where: {
+          id: request.classId,
+          teacher: {
+            email: user.email,
+          },
+        },
+      });
+      if (!_class) {
+        throw new BadRequestException(`Class ${request.classId} not found`);
+      }
+      const specification = await this.specificationService.getOne({
+        where: {
+          classId: request.classId,
+          action: ActionEnum.EXPORT,
+          name: SpecificationNameEnum.DSSV,
+        },
+      });
+      if (!specification) {
+        throw new BadRequestException(`Specification not found`);
+      }
+      await this.officeService.exportListByScript(
+        request.classId,
+        specification.templateFile,
+        specification.jsonFile,
+      );
+      const fileOutputPath = await this.classService
+        .getOne({ where: { id: request.classId } })
+        .then((data) => {
+          return data?.outputPath;
+        });
+      if (fileOutputPath) {
+        const fileOutput = await this.storageService.downloadFile(fileOutputPath);
+        const metaData = await this.storageService.getMetadata(fileOutputPath);
+        if (fileOutput) {
+          if (_class.outputPath) this.storageService.deleteFile(_class.outputPath);
+          const output = await streamToBuffer(fileOutput);
+          res.setHeader(
+            'Content-Disposition',
+            `attachment; filename="${encodeURIComponent(fileOutputPath.split('/').pop() || 'output.xlsx')}"`,
+          );
+          res.setHeader('Content-Type', metaData?.contentType || 'application/octet-stream');
+          res.send(output);
+          return;
+        }
+      }
+      res.status(400).json({
+        status: 'error',
+        message: `Error exporting students: Notfound file output`,
+      });
+    } catch (error) {
+      Logger.error(error.message, error.stack, 'StudentsService.exportListStudent');
+      res.status(500).json({
+        status: 'error',
+        message: `Error exporting students: ${error.message}`,
+      });
     }
   }
 }

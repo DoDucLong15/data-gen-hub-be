@@ -24,7 +24,7 @@ export interface OfficeStrategy {
     classId: string,
     templatePath: string,
     specificationPath: string,
-  ): Promise<string>;
+  ): Promise<void>;
   exportSingleByScript(
     classId: string,
     templatePath: string,

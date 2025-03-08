@@ -3,6 +3,7 @@ import {
   ClassSerializerInterceptor,
   Controller,
   Post,
+  Res,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -18,6 +19,8 @@ import { ImportListStudentRequest } from 'src/students/dtos/import-data.dto';
 import { User } from 'src/auth/decorators/user.decorator';
 import { UserPayload } from 'src/auth/types/user-playload.type';
 import { BaseResponse } from 'src/base/types/response.type';
+import { ExportListStudentRequestV2 } from 'src/students/dtos/export-data.dto';
+import { Response } from 'express';
 
 @ApiTags('Student V2')
 @ApiBearerAuth()
@@ -46,5 +49,14 @@ export class StudentControllerV2 {
     @UploadedFiles() files: Express.Multer.File[],
   ): Promise<BaseResponse> {
     return await this.studentV2Service.importListStudents(files, request, user);
+  }
+
+  @Post('student-list/export')
+  async exportList(
+    @Body() request: ExportListStudentRequestV2,
+    @User() user: UserPayload,
+    @Res() res: Response,
+  ): Promise<void> {
+    return await this.studentV2Service.exportListStudent(request, user, res);
   }
 }

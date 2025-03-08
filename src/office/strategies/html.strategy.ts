@@ -47,7 +47,7 @@ export class HtmlStrategy implements OfficeStrategy {
     classId: string,
     templatePath: string,
     specificationPath: string,
-  ): Promise<string> {
+  ): Promise<void> {
     throw new Error('Method not implemented.');
   }
   async exportSingleByScript(
