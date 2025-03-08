@@ -1,5 +1,6 @@
 import { JsonMappingSingleType } from 'src/template-specification/types/json.type';
 import { JsonMappingListType } from '../types/json-mapping-list.type';
+import { ThesisDocumentEnum } from 'src/thesis-management/enums/thesis-document.enum';
 
 export interface OfficeStrategy {
   importList<T extends any>(file: Express.Multer.File, template: JsonMappingListType): Promise<T[]>;
@@ -29,6 +30,8 @@ export interface OfficeStrategy {
     classId: string,
     templatePath: string,
     specificationPath: string,
+    thesisType: ThesisDocumentEnum,
+    extraData?: any,
   ): Promise<void>;
   importSingleByScript(
     inputPaths: string[],

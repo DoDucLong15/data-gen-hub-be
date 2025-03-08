@@ -19,7 +19,10 @@ import { ImportListStudentRequest } from 'src/students/dtos/import-data.dto';
 import { User } from 'src/auth/decorators/user.decorator';
 import { UserPayload } from 'src/auth/types/user-playload.type';
 import { BaseResponse } from 'src/base/types/response.type';
-import { ExportListStudentRequestV2 } from 'src/students/dtos/export-data.dto';
+import {
+  ExportListStudentRequestV2,
+  ExportStudentFormDataRequestV2,
+} from 'src/students/dtos/export-data.dto';
 import { Response } from 'express';
 
 @ApiTags('Student V2')
@@ -58,5 +61,13 @@ export class StudentControllerV2 {
     @Res() res: Response,
   ): Promise<void> {
     return await this.studentV2Service.exportListStudent(request, user, res);
+  }
+
+  @Post('thesis-document/export')
+  async generate(
+    @Body() request: ExportStudentFormDataRequestV2,
+    @User() user: UserPayload,
+  ): Promise<BaseResponse> {
+    return await this.studentV2Service.generateStudentFormData(request, user);
   }
 }

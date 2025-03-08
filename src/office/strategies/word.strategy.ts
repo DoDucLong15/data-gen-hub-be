@@ -2,6 +2,7 @@ import { JsonMappingSingleType } from 'src/template-specification/types/json.typ
 import { OfficeStrategy } from '../interfaces/office.interface';
 import { JsonMappingListType } from '../types/json-mapping-list.type';
 import { PythonScriptService } from 'src/python-script/python-script.service';
+import { ThesisDocumentEnum } from 'src/thesis-management/enums/thesis-document.enum';
 
 export class WordStrategy implements OfficeStrategy {
   constructor(private readonly pythonScriptService: PythonScriptService) {}
@@ -54,6 +55,7 @@ export class WordStrategy implements OfficeStrategy {
     classId: string,
     templatePath: string,
     specificationPath: string,
+    thesisType: ThesisDocumentEnum,
   ): Promise<void> {
     throw new Error('Method not implemented.');
   }

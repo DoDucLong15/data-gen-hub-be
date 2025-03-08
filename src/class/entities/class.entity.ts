@@ -3,6 +3,9 @@ import { AbstractAuditingEntity } from '../../base/entities/abstract-auditing-en
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { TemplateSpecificationEntity } from '../../template-specification/entities/template-specification.entity';
 import { StudentEntity } from '../../students/entities/student.entity';
+import { AssignmentSheetsEntity } from '../../thesis-management/entities/assignment-sheet.entity';
+import { GuidanceReviewEntity } from '../../thesis-management/entities/guidance-review.entity';
+import { SupervisoryCommentsEntity } from '../../thesis-management/entities/supervisory-comments.entity';
 
 @Entity('classes')
 export class ClassEntity extends AbstractAuditingEntity {
@@ -42,4 +45,19 @@ export class ClassEntity extends AbstractAuditingEntity {
 
   @Column({ type: 'varchar', name: 'output_path', nullable: true })
   outputPath: string;
+
+  @OneToMany(() => AssignmentSheetsEntity, (assignmentSheet) => assignmentSheet.class, {
+    cascade: true,
+  })
+  assignmentSheets: AssignmentSheetsEntity[];
+
+  @OneToMany(() => GuidanceReviewEntity, (guidanceReview) => guidanceReview.class, {
+    cascade: true,
+  })
+  guidanceReviews: GuidanceReviewEntity[];
+
+  @OneToMany(() => SupervisoryCommentsEntity, (supervisoryComment) => supervisoryComment.class, {
+    cascade: true,
+  })
+  supervisoryComments: SupervisoryCommentsEntity[];
 }

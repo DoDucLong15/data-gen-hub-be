@@ -13,6 +13,7 @@ import { Response } from 'express';
 import { CommonUtils } from 'src/utils/common.util';
 import { PythonScriptService } from 'src/python-script/python-script.service';
 import { FileExtension } from 'src/template-specification/constants/extension.const';
+import { ThesisDocumentEnum } from 'src/thesis-management/enums/thesis-document.enum';
 const archiver = require('archiver');
 
 @Injectable()
@@ -182,10 +183,18 @@ export class OfficeService {
     classId: string,
     templatePath: string,
     specificationPath: string,
+    thesisType: ThesisDocumentEnum,
+    extraData?: any,
   ): Promise<void> {
     const fileExt = this.getFileExtension(templatePath);
     const strategy = this.getStrategyByFileExtension(fileExt);
-    return await strategy.exportSingleByScript(classId, templatePath, specificationPath);
+    return await strategy.exportSingleByScript(
+      classId,
+      templatePath,
+      specificationPath,
+      thesisType,
+      extraData,
+    );
   }
 
   async importSingleByScript(

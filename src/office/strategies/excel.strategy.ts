@@ -9,6 +9,7 @@ import { JsonMappingSingleType } from 'src/template-specification/types/json.typ
 import { CommonUtils } from 'src/utils/common.util';
 import { PythonScriptService } from 'src/python-script/python-script.service';
 import { OfficePathScript } from '../constants/script-path-offcie.const';
+import { ThesisDocumentEnum } from 'src/thesis-management/enums/thesis-document.enum';
 
 export class ExcelStrategy implements OfficeStrategy {
   constructor(private readonly pythonScriptService: PythonScriptService) {}
@@ -458,8 +459,31 @@ export class ExcelStrategy implements OfficeStrategy {
     classId: string,
     templatePath: string,
     specificationPath: string,
+    thesisType: ThesisDocumentEnum,
+    extraData?: any,
   ): Promise<void> {
-    throw new Error('Method not implemented.');
+    try {
+      Logger.verbose(
+        `Exporting single by script with template ${templatePath} and specification ${specificationPath}`,
+        'ExcelStrategy.exportSingleByScript',
+      );
+      const output = await this.pythonScriptService.runPythonScript(OfficePathScript.DB_TO_EXCEL, [
+        '-s',
+        specificationPath,
+        '-t',
+        templatePath,
+        '-c',
+        classId,
+        '-o',
+        `data-gen-hub/${classId}/${thesisType}/output`,
+        ...(extraData ? ['-e', JSON.stringify(extraData)] : []),
+        '-b',
+        thesisType,
+      ]);
+      Logger.verbose(output, 'ExcelStrategy.exportSingleByScript');
+    } catch (error) {
+      throw new Error(`Error exporting single by script: ${error.message}`);
+    }
   }
   async importSingleByScript(
     inputPaths: string[],

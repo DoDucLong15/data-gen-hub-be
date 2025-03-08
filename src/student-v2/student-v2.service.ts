@@ -7,6 +7,8 @@ import { StorageService } from 'src/storage/storage.service';
 import {
   ExportListStudentRequest,
   ExportListStudentRequestV2,
+  ExportStudentFormDataRequest,
+  ExportStudentFormDataRequestV2,
 } from 'src/students/dtos/export-data.dto';
 import { ImportListStudentRequest } from 'src/students/dtos/import-data.dto';
 import { StudentsService } from 'src/students/students.service';
@@ -17,6 +19,7 @@ import { AsyncUtils } from 'src/utils/async.utils';
 import { CommonUtils } from 'src/utils/common.util';
 import { Response } from 'express';
 import { streamToBuffer } from 'src/storage/helpers/convert.helper';
+import { ThesisDocumentEnum } from 'src/thesis-management/enums/thesis-document.enum';
 
 @Injectable()
 export class StudentServiceV2 {
@@ -177,6 +180,61 @@ export class StudentServiceV2 {
         status: 'error',
         message: `Error exporting students: ${error.message}`,
       });
+    }
+  }
+
+  async generateStudentFormData(
+    request: ExportStudentFormDataRequestV2,
+    user: UserPayload,
+  ): Promise<BaseResponse> {
+    try {
+      const _class = await this.classService.getOne({
+        where: {
+          id: request.classId,
+          teacher: {
+            email: user.email,
+          },
+        },
+      });
+      if (!_class) {
+        throw new BadRequestException(`Class ${request.classId} not found`);
+      }
+      const specification = await this.specificationService.getOne({
+        where: {
+          classId: request.classId,
+          action: ActionEnum.EXPORT,
+          name:
+            request.thesisDocType === ThesisDocumentEnum.ASSIGNMENT_SHEET
+              ? SpecificationNameEnum.PGNV
+              : request.thesisDocType === ThesisDocumentEnum.GUIDANCE_REVIEW
+                ? SpecificationNameEnum.NXHD
+                : SpecificationNameEnum.NXPB,
+        },
+      });
+      if (!specification) {
+        throw new BadRequestException(`Specification not found`);
+      }
+      await this.officeService.exportSingleByScript(
+        request.classId,
+        specification.templateFile,
+        specification.jsonFile,
+        request.thesisDocType,
+        {
+          thesis_start_date: request.thesisStartDate,
+          thesis_end_date: request.thesisEndDate,
+          teacher_sign_date: request.teacherSignatureDate,
+        },
+      );
+      return {
+        status: 'success',
+        message: 'Generating student form data successfully',
+      };
+    } catch (error) {
+      Logger.error(error.message, error.stack, 'StudentsService.generateStudentFormData');
+      return {
+        status: 'error',
+        message: `Error generating student form data: ${error.message}`,
+      };
     }
   }
 }
