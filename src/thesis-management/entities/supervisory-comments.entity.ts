@@ -17,10 +17,10 @@ export class SupervisoryCommentsEntity extends AbstractAuditingEntity {
   projectTitle: string;
 
   @Column({ type: 'varchar', name: 'input_path', nullable: true })
-  inputPath: string;
+  inputPath: string | null;
 
   @Column({ type: 'varchar', name: 'output_path', nullable: true })
-  outputPath: string;
+  outputPath: string | null;
 
   @ManyToOne(() => ClassEntity, (classEntity) => classEntity.supervisoryComments, {
     onDelete: 'CASCADE',

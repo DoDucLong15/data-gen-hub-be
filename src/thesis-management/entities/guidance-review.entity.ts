@@ -17,10 +17,10 @@ export class GuidanceReviewEntity extends AbstractAuditingEntity {
   projectTitle: string;
 
   @Column({ type: 'varchar', name: 'input_path', nullable: true })
-  inputPath: string;
+  inputPath: string | null;
 
   @Column({ type: 'varchar', name: 'output_path', nullable: true })
-  outputPath: string;
+  outputPath: string | null;
 
   @Column({ type: 'varchar', name: 'type_of_thesis', nullable: true })
   typeOfThesis: string;
