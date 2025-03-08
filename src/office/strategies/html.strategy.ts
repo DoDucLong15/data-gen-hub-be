@@ -60,7 +60,7 @@ export class HtmlStrategy implements OfficeStrategy {
     throw new Error('Method not implemented.');
   }
   async importSingleByScript(
-    inputPaths: string[],
+    inputPath: string,
     specificationPath: string,
     classId: string,
   ): Promise<void> {

@@ -198,12 +198,12 @@ export class OfficeService {
   }
 
   async importSingleByScript(
-    inputPaths: string[],
+    inputPath: string,
     specificationPath: string,
     classId: string,
   ): Promise<void> {
-    const fileExt = this.getFileExtension(inputPaths[0]);
+    const fileExt = this.getFileExtension(inputPath);
     const strategy = this.getStrategyByFileExtension(fileExt);
-    return await strategy.importSingleByScript(inputPaths, specificationPath, classId);
+    return await strategy.importSingleByScript(inputPath, specificationPath, classId);
   }
 }

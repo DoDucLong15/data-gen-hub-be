@@ -15,7 +15,10 @@ import { RolesGuard } from 'src/auth/guards/role.guard';
 import { Roles } from 'src/auth/decorators/role.decorator';
 import { RoleTypes } from 'src/users/enums/role-types.enum';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ImportListStudentRequest } from 'src/students/dtos/import-data.dto';
+import {
+  ImportListStudentRequest,
+  ImportStudentFormDataRequestV2,
+} from 'src/students/dtos/import-data.dto';
 import { User } from 'src/auth/decorators/user.decorator';
 import { UserPayload } from 'src/auth/types/user-playload.type';
 import { BaseResponse } from 'src/base/types/response.type';
@@ -69,5 +72,25 @@ export class StudentControllerV2 {
     @User() user: UserPayload,
   ): Promise<BaseResponse> {
     return await this.studentV2Service.generateStudentFormData(request, user);
+  }
+
+  @Post('thesis-document/import')
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      limits: {
+        fileSize: 1024 * 1024 * 10,
+      },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    type: ImportStudentFormDataRequestV2,
+  })
+  async importStudentFormData(
+    @Body() request: ImportStudentFormDataRequestV2,
+    @User() user: UserPayload,
+    @UploadedFiles() files: Express.Multer.File[],
+  ): Promise<BaseResponse> {
+    return await this.studentV2Service.importStudentFormData(files, request, user);
   }
 }

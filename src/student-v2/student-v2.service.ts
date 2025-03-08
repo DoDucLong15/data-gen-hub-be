@@ -10,7 +10,11 @@ import {
   ExportStudentFormDataRequest,
   ExportStudentFormDataRequestV2,
 } from 'src/students/dtos/export-data.dto';
-import { ImportListStudentRequest } from 'src/students/dtos/import-data.dto';
+import {
+  ImportListStudentRequest,
+  ImportStudentFormDataRequest,
+  ImportStudentFormDataRequestV2,
+} from 'src/students/dtos/import-data.dto';
 import { StudentsService } from 'src/students/students.service';
 import { SpecificationNameEnum } from 'src/template-specification/constants/default.const';
 import { ActionEnum } from 'src/template-specification/enums/action.enum';
@@ -234,6 +238,83 @@ export class StudentServiceV2 {
       return {
         status: 'error',
         message: `Error generating student form data: ${error.message}`,
+      };
+    }
+  }
+
+  async importStudentFormData(
+    files: Express.Multer.File[],
+    request: ImportStudentFormDataRequestV2,
+    user: UserPayload,
+  ): Promise<BaseResponse> {
+    try {
+      if (!files || files.length === 0) {
+        throw new BadRequestException('Files are required');
+      }
+      const _class = await this.classService.getOne({
+        where: {
+          id: request.classId,
+          teacher: {
+            email: user.email,
+          },
+        },
+      });
+      if (!_class) {
+        throw new BadRequestException(`Class ${request.classId} not found`);
+      }
+      const specification = await this.specificationService.getOne({
+        where: {
+          classId: request.classId,
+          action: ActionEnum.IMPORT,
+          name:
+            request.thesisDocType === ThesisDocumentEnum.ASSIGNMENT_SHEET
+              ? SpecificationNameEnum.PGNV
+              : request.thesisDocType === ThesisDocumentEnum.GUIDANCE_REVIEW
+                ? SpecificationNameEnum.NXHD
+                : SpecificationNameEnum.NXPB,
+        },
+      });
+      if (!specification) {
+        throw new BadRequestException(`Specification not found`);
+      }
+
+      const unzipFiles = await CommonUtils.unzip(files);
+      for (const file of unzipFiles) {
+        let path: string = '';
+        try {
+          Logger.debug(
+            `Importing student form data from ${file.originalname}`,
+            'StudentsService.importStudentFormData',
+          );
+          const res = await this.storageService.uploadDataToFile(
+            file.buffer,
+            file.mimetype,
+            `data-gen-hub/${request.classId}/${request.thesisDocType}/input/${Date.now()}_${file.originalname}`,
+          );
+          if (res) {
+            path = res.key;
+            await this.officeService.importSingleByScript(
+              res.key,
+              specification.jsonFile,
+              request.classId,
+            );
+          }
+        } catch (error) {
+          Logger.error(error.message, error.stack, 'StudentsService.importStudentFormData');
+          if (path && path.length) await this.storageService.deleteFile(path);
+        } finally {
+          await AsyncUtils.delay(1000);
+        }
+      }
+      return {
+        status: 'success',
+        message: 'Imported student form data successfully',
+      };
+    } catch (error) {
+      Logger.error(error.message, error.stack, 'StudentsService.importStudentFormData');
+      return {
+        status: 'error',
+        message: `Error importing student form data: ${error.message}`,
       };
     }
   }

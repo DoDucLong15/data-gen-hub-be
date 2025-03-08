@@ -486,10 +486,26 @@ export class ExcelStrategy implements OfficeStrategy {
     }
   }
   async importSingleByScript(
-    inputPaths: string[],
+    inputPath: string,
     specificationPath: string,
     classId: string,
   ): Promise<void> {
-    throw new Error('Method not implemented.');
+    try {
+      Logger.verbose(
+        `Importing single by script with input ${inputPath} and specification ${specificationPath}`,
+        'ExcelStrategy.importSingleByScript',
+      );
+      const output = await this.pythonScriptService.runPythonScript(OfficePathScript.EXCEL_TO_DB, [
+        '-s',
+        specificationPath,
+        '-t',
+        inputPath,
+        '-c',
+        classId,
+      ]);
+      Logger.verbose(output, 'ExcelStrategy.importSingleByScript');
+    } catch (error) {
+      throw new Error(`Error importing single by script: ${error.message}`);
+    }
   }
 }

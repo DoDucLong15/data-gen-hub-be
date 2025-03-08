@@ -34,7 +34,7 @@ export interface OfficeStrategy {
     extraData?: any,
   ): Promise<void>;
   importSingleByScript(
-    inputPaths: string[],
+    inputPath: string,
     specificationPath: string,
     classId: string,
   ): Promise<void>;

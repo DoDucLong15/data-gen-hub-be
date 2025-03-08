@@ -23,3 +23,16 @@ export class ImportStudentFormDataRequest {
   @ApiProperty({ type: 'array', items: { type: 'string', format: 'binary' }, required: true })
   files: any[];
 }
+
+export class ImportStudentFormDataRequestV2 {
+  @IsNotEmpty()
+  @IsString()
+  classId: string;
+
+  @IsNotEmpty()
+  @IsEnum(ThesisDocumentEnum)
+  thesisDocType: ThesisDocumentEnum;
+
+  @ApiProperty({ type: 'array', items: { type: 'string', format: 'binary' }, required: true })
+  files: any[];
+}
