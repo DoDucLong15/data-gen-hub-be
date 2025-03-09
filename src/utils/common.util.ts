@@ -2,6 +2,8 @@ import * as path from 'path';
 import * as decompress from 'decompress';
 import * as mime from 'mime-types';
 import { Readable } from 'stream';
+import { HttpException, HttpStatus, InternalServerErrorException } from '@nestjs/common';
+import { AxiosError } from 'axios';
 
 export class CommonUtils {
   static zipExtension = ['.zip', '.tar', '.tar.gz', '.tgz', '.bz2'];
@@ -56,5 +58,30 @@ export class CommonUtils {
       }
     }
     return extractedFiles;
+  }
+
+  static isNotEmptyObj(obj: Record<string, any>): boolean {
+    return obj && Object.keys(obj).length > 0;
+  }
+
+  static isEmptyObj(obj: Record<string, any>): boolean {
+    return !this.isNotEmptyObj(obj);
+  }
+
+  static transformError(error: any, context?: string): HttpException {
+    if (error instanceof HttpException) return error;
+
+    if (error instanceof AxiosError) {
+      const message = error.response?.data?.message ?? JSON.stringify(error.response?.data);
+      const status = error.response?.status ?? error.status ?? HttpStatus.INTERNAL_SERVER_ERROR;
+      return new HttpException(context ? `${context}: ${message}` : message, status);
+    }
+
+    const message = typeof error === 'string' ? error : (error.message ?? JSON.stringify(error));
+    return new InternalServerErrorException(context ? `${context}: ${message}` : message);
+  }
+
+  static isNotEmptyArray(arr: any[]): boolean {
+    return arr && arr.length > 0;
   }
 }
