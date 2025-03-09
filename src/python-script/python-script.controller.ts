@@ -12,4 +12,10 @@ export class PythonScriptController {
     const data = await this.pythonScriptService.runPythonScript('../python-script/main.py');
     return JSON.parse(data);
   }
+
+  @Get('db-gen-spec')
+  async generateSpec() {
+    const data = await this.pythonScriptService.runPythonScript('../python-script/dbgenspec.py');
+    return JSON.parse(data);
+  }
 }
