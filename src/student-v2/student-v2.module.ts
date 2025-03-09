@@ -6,6 +6,7 @@ import { OfficeModule } from 'src/office/office.module';
 import { ClassModule } from 'src/class/class.module';
 import { TemplateSpecificationModule } from 'src/template-specification/template-specification.module';
 import { StorageModule } from 'src/storage/storage.module';
+import { ProgressModule } from 'src/progress/progress.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { StorageModule } from 'src/storage/storage.module';
     forwardRef(() => ClassModule),
     forwardRef(() => TemplateSpecificationModule),
     forwardRef(() => StorageModule),
+    forwardRef(() => ProgressModule),
   ],
   controllers: [StudentControllerV2],
   providers: [StudentServiceV2],

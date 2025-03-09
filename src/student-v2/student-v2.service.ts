@@ -24,6 +24,8 @@ import { CommonUtils } from 'src/utils/common.util';
 import { Response } from 'express';
 import { streamToBuffer } from 'src/storage/helpers/convert.helper';
 import { ThesisDocumentEnum } from 'src/thesis-management/enums/thesis-document.enum';
+import { ProgressService } from 'src/progress/progress.service';
+import { EProgressType } from 'src/progress/constant/progress.const';
 
 @Injectable()
 export class StudentServiceV2 {
@@ -38,14 +40,26 @@ export class StudentServiceV2 {
     private readonly specificationService: TemplateSpecificationService,
     @Inject(forwardRef(() => StorageService))
     private readonly storageService: StorageService,
+    private readonly processService: ProgressService,
   ) {}
 
   async importListStudents(
     files: Express.Multer.File[],
     request: ImportListStudentRequest,
     user: UserPayload,
+    processId: string,
   ): Promise<BaseResponse> {
+    const errorCollector: Record<string, any> = {};
     try {
+      await this.processService.createProgress([
+        {
+          processId,
+          type: EProgressType.STUDENT_LIST,
+          action: ActionEnum.IMPORT,
+          createBy: user.email,
+          classId: request.classId,
+        },
+      ]);
       if (!files || files.length === 0) {
         throw new BadRequestException('Files are required');
       }
@@ -94,6 +108,7 @@ export class StudentServiceV2 {
           if (inputPath && inputPath.length) {
             await this.storageService.deleteFile(inputPath);
           }
+          errorCollector[file.originalname] = error;
         } finally {
           await AsyncUtils.delay(1000);
         }
@@ -108,12 +123,25 @@ export class StudentServiceV2 {
           user,
         );
       }
+      await this.processService.makeCompleted(
+        { processId },
+        {
+          error: errorCollector,
+        },
+      );
       return {
         status: 'success',
         message: 'Imported students successfully',
       };
     } catch (error) {
       Logger.error(error.message, error.stack, 'StudentsServiceV2.importListStudents');
+      errorCollector['unknown'] = error;
+      await this.processService.makeFailed(
+        { processId },
+        {
+          error: errorCollector,
+        },
+      );
       return {
         status: 'error',
         message: `Error importing students: ${error.message}`,
@@ -126,8 +154,19 @@ export class StudentServiceV2 {
     request: ExportListStudentRequestV2,
     user: UserPayload,
     res: Response,
+    processId: string,
   ): Promise<void> {
+    const errorCollector: Record<string, any> = {};
     try {
+      await this.processService.createProgress([
+        {
+          processId,
+          type: EProgressType.STUDENT_LIST,
+          action: ActionEnum.EXPORT,
+          createBy: user.email,
+          classId: request.classId,
+        },
+      ]);
       const _class = await this.classService.getOne({
         where: {
           id: request.classId,
@@ -171,15 +210,20 @@ export class StudentServiceV2 {
           );
           res.setHeader('Content-Type', metaData?.contentType || 'application/octet-stream');
           res.send(output);
+          await this.processService.makeCompleted({ processId }, { error: errorCollector });
           return;
         }
       }
+      errorCollector['exist-output'] = 'Notfound file output';
+      await this.processService.makeCompleted({ processId }, { error: errorCollector });
       res.status(400).json({
         status: 'error',
         message: `Error exporting students: Notfound file output`,
       });
     } catch (error) {
       Logger.error(error.message, error.stack, 'StudentsService.exportListStudent');
+      errorCollector['unknown'] = error;
+      await this.processService.makeFailed({ processId }, { error: errorCollector });
       res.status(500).json({
         status: 'error',
         message: `Error exporting students: ${error.message}`,
@@ -190,8 +234,24 @@ export class StudentServiceV2 {
   async generateStudentFormData(
     request: ExportStudentFormDataRequestV2,
     user: UserPayload,
+    processId: string,
   ): Promise<BaseResponse> {
+    const errorCollector: Record<string, any> = {};
     try {
+      await this.processService.createProgress([
+        {
+          processId,
+          type:
+            request.thesisDocType === ThesisDocumentEnum.ASSIGNMENT_SHEET
+              ? EProgressType.ASSIGNMENT_SHEET
+              : request.thesisDocType === ThesisDocumentEnum.GUIDANCE_REVIEW
+                ? EProgressType.GUIDANCE_REVIEW
+                : EProgressType.SUPERVISORY_COMMENTS,
+          action: ActionEnum.EXPORT,
+          createBy: user.email,
+          classId: request.classId,
+        },
+      ]);
       const _class = await this.classService.getOne({
         where: {
           id: request.classId,
@@ -229,12 +289,15 @@ export class StudentServiceV2 {
           teacher_sign_date: request.teacherSignatureDate,
         },
       );
+      await this.processService.makeCompleted({ processId }, { error: errorCollector });
       return {
         status: 'success',
         message: 'Generating student form data successfully',
       };
     } catch (error) {
       Logger.error(error.message, error.stack, 'StudentsService.generateStudentFormData');
+      errorCollector['unknown'] = error;
+      await this.processService.makeFailed({ processId }, { error: errorCollector });
       return {
         status: 'error',
         message: `Error generating student form data: ${error.message}`,
@@ -246,8 +309,24 @@ export class StudentServiceV2 {
     files: Express.Multer.File[],
     request: ImportStudentFormDataRequestV2,
     user: UserPayload,
+    processId: string,
   ): Promise<BaseResponse> {
+    const errorCollector: Record<string, any> = {};
     try {
+      await this.processService.createProgress([
+        {
+          processId,
+          type:
+            request.thesisDocType === ThesisDocumentEnum.ASSIGNMENT_SHEET
+              ? EProgressType.ASSIGNMENT_SHEET
+              : request.thesisDocType === ThesisDocumentEnum.GUIDANCE_REVIEW
+                ? EProgressType.GUIDANCE_REVIEW
+                : EProgressType.SUPERVISORY_COMMENTS,
+          action: ActionEnum.IMPORT,
+          createBy: user.email,
+          classId: request.classId,
+        },
+      ]);
       if (!files || files.length === 0) {
         throw new BadRequestException('Files are required');
       }
@@ -302,16 +381,20 @@ export class StudentServiceV2 {
         } catch (error) {
           Logger.error(error.message, error.stack, 'StudentsService.importStudentFormData');
           if (path && path.length) await this.storageService.deleteFile(path);
+          errorCollector[file.originalname] = error;
         } finally {
           await AsyncUtils.delay(1000);
         }
       }
+      await this.processService.makeCompleted({ processId }, { error: errorCollector });
       return {
         status: 'success',
         message: 'Imported student form data successfully',
       };
     } catch (error) {
       Logger.error(error.message, error.stack, 'StudentsService.importStudentFormData');
+      errorCollector['unknown'] = error;
+      await this.processService.makeFailed({ processId }, { error: errorCollector });
       return {
         status: 'error',
         message: `Error importing student form data: ${error.message}`,

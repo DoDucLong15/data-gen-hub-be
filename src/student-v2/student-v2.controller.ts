@@ -2,6 +2,7 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Logger,
   Post,
   Res,
   UploadedFiles,
@@ -27,6 +28,7 @@ import {
   ExportStudentFormDataRequestV2,
 } from 'src/students/dtos/export-data.dto';
 import { Response } from 'express';
+import { ProgressService } from 'src/progress/progress.service';
 
 @ApiTags('Student V2')
 @ApiBearerAuth()
@@ -54,7 +56,19 @@ export class StudentControllerV2 {
     @User() user: UserPayload,
     @UploadedFiles() files: Express.Multer.File[],
   ): Promise<BaseResponse> {
-    return await this.studentV2Service.importListStudents(files, request, user);
+    const generateProcessId = ProgressService.generateId('import-student-list-manual');
+    this.studentV2Service
+      .importListStudents(files, request, user, generateProcessId)
+      .catch((error) => {
+        Logger.error(error, `${this.constructor.name}.importList`);
+      });
+    return {
+      status: 'processing',
+      message: 'Processing import student list',
+      data: {
+        processId: generateProcessId,
+      },
+    };
   }
 
   @Post('student-list/export')
@@ -63,7 +77,8 @@ export class StudentControllerV2 {
     @User() user: UserPayload,
     @Res() res: Response,
   ): Promise<void> {
-    return await this.studentV2Service.exportListStudent(request, user, res);
+    const generateProcessId = ProgressService.generateId('export-student-list-manual');
+    return await this.studentV2Service.exportListStudent(request, user, res, generateProcessId);
   }
 
   @Post('thesis-document/export')
@@ -71,7 +86,19 @@ export class StudentControllerV2 {
     @Body() request: ExportStudentFormDataRequestV2,
     @User() user: UserPayload,
   ): Promise<BaseResponse> {
-    return await this.studentV2Service.generateStudentFormData(request, user);
+    const generateProcessId = ProgressService.generateId(`export-${request.thesisDocType}-manual`);
+    this.studentV2Service
+      .generateStudentFormData(request, user, generateProcessId)
+      .catch((error) => {
+        Logger.error(error, `${this.constructor.name}.generate`);
+      });
+    return {
+      status: 'processing',
+      message: 'Processing generate student form data',
+      data: {
+        processId: generateProcessId,
+      },
+    };
   }
 
   @Post('thesis-document/import')
@@ -91,6 +118,18 @@ export class StudentControllerV2 {
     @User() user: UserPayload,
     @UploadedFiles() files: Express.Multer.File[],
   ): Promise<BaseResponse> {
-    return await this.studentV2Service.importStudentFormData(files, request, user);
+    const generateProcessId = ProgressService.generateId(`import-${request.thesisDocType}-manual`);
+    this.studentV2Service
+      .importStudentFormData(files, request, user, generateProcessId)
+      .catch((error) => {
+        Logger.error(error, `${this.constructor.name}.importStudentFormData`);
+      });
+    return {
+      status: 'processing',
+      message: 'Processing import student form data',
+      data: {
+        processId: generateProcessId,
+      },
+    };
   }
 }
