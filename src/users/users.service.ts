@@ -9,6 +9,8 @@ import { UserResponse } from './types/user-response.type';
 import { MailerService } from 'src/mailer/mailer.service';
 import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.util';
 import { TemplateHelper } from 'src/mailer/helpers/template.helper';
+import { UserPayload } from 'src/auth/types/user-playload.type';
+import { RoleTypes } from './enums/role-types.enum';
 
 @Injectable()
 export class UsersService {
@@ -47,18 +49,35 @@ export class UsersService {
     return MapperUserResponse(newUser);
   }
 
-  async updateUserInfo(dto: UpdateUserDto): Promise<UserResponse> {
+  async updateUserInfo(dto: UpdateUserDto, updateBy: UserPayload): Promise<UserResponse> {
     const user = await this.userRepository.findOne({
       where: { id: dto.id },
     });
     if (!user) {
       throw new BadRequestException(`User ${dto.id} not found`);
     }
+    if (updateBy.role !== RoleTypes.ADMIN && updateBy.email !== user.email) {
+      throw new BadRequestException(`You can't update this user`);
+    }
+    if (dto.role) {
+      if (updateBy.role !== RoleTypes.ADMIN) {
+        throw new BadRequestException(`You can't update role`);
+      }
+      const role = await this.roleService.findRoleByName(dto.role);
+      if (!role) {
+        throw new BadRequestException(`Role ${dto.role} not found`);
+      }
+      user.role = role;
+    }
+    delete dto.role;
     const userUpdate = await this.userRepository.save({
       ...user,
       ...dto,
-    });
-    return MapperUserResponse(userUpdate);
+    } as UserEntity);
+    return MapperUserResponse({
+      ...userUpdate,
+      roleName: userUpdate.role.name,
+    } as UserEntity);
   }
 
   async deleteUser(id: string): Promise<boolean> {
@@ -80,6 +99,12 @@ export class UsersService {
       throw new BadRequestException(`User ${email} not found`);
     }
     return MapperUserResponse(user);
+  }
+
+  async getUserById(id: string): Promise<UserEntity | null> {
+    return await this.userRepository.findOne({
+      where: { id },
+    });
   }
 
   async getUsers(options?: FindManyOptions<UserEntity> | undefined): Promise<UserEntity[]> {

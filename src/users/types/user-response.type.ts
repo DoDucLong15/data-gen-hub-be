@@ -7,4 +7,6 @@ export type UserResponse = {
   department: string;
   position: string;
   role: string;
+  createdAt: Date;
+  updatedAt: Date;
 };

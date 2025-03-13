@@ -38,7 +38,7 @@ export class UserEntity extends AbstractAuditingEntity {
   role_id: string;
 
   @Expose({ name: 'roleName' })
-  get roleName(): RoleTypes {
+  get roleName(): string {
     return this.role.name;
   }
 
