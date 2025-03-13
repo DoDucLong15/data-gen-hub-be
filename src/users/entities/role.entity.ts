@@ -6,7 +6,10 @@ import { RoleTypes } from '../enums/role-types.enum';
 @Entity('roles')
 export class RoleEnity extends AbstractAuditingEntity {
   @Column({ type: 'varchar', unique: true })
-  name: RoleTypes;
+  name: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  description: string;
 
   @OneToMany(() => UserEntity, (user) => user.role, {
     cascade: true,
