@@ -190,6 +190,7 @@ export class StudentServiceV2 {
       }
       await this.officeService.exportListByScript(
         request.classId,
+        request.studentIds,
         specification.templateFile,
         specification.jsonFile,
       );

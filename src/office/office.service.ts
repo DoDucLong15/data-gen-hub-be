@@ -171,12 +171,13 @@ export class OfficeService {
 
   async exportListByScript(
     classId: string,
+    studentIds: string[],
     templatePath: string,
     specificationPath: string,
   ): Promise<void> {
     const fileExt = this.getFileExtension(templatePath);
     const strategy = this.getStrategyByFileExtension(fileExt);
-    return await strategy.exportListByScript(classId, templatePath, specificationPath);
+    return await strategy.exportListByScript(classId, studentIds, templatePath, specificationPath);
   }
 
   async exportSingleByScript(

@@ -30,6 +30,7 @@ export class ProgressController {
         ...(CommonUtils.isNotEmptyArray(query.actions) && { action: In(query.actions) }),
         createBy: user.email,
       },
+      order: { createdAt: 'DESC' },
     });
   }
 }

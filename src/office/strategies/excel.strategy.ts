@@ -432,6 +432,7 @@ export class ExcelStrategy implements OfficeStrategy {
   }
   async exportListByScript(
     classId: string,
+    studentIds: string[],
     templatePath: string,
     specificationPath: string,
   ): Promise<void> {
@@ -449,6 +450,7 @@ export class ExcelStrategy implements OfficeStrategy {
         classId,
         '-o',
         `data-gen-hub/${classId}/students/output`,
+        ...(studentIds?.length ? ['-si', studentIds.join(',')] : []),
       ]);
       Logger.verbose(output, 'ExcelStrategy.exportListByScript');
     } catch (error) {
