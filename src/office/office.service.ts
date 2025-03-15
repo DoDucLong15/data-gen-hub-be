@@ -182,6 +182,7 @@ export class OfficeService {
 
   async exportSingleByScript(
     classId: string,
+    studentIds: string[],
     templatePath: string,
     specificationPath: string,
     thesisType: ThesisDocumentEnum,
@@ -191,6 +192,7 @@ export class OfficeService {
     const strategy = this.getStrategyByFileExtension(fileExt);
     return await strategy.exportSingleByScript(
       classId,
+      studentIds,
       templatePath,
       specificationPath,
       thesisType,

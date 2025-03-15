@@ -54,6 +54,7 @@ export class WordStrategy implements OfficeStrategy {
   }
   async exportSingleByScript(
     classId: string,
+    studentIds: string[],
     templatePath: string,
     specificationPath: string,
     thesisType: ThesisDocumentEnum,

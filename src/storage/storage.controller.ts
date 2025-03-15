@@ -3,7 +3,10 @@ import {
   ClassSerializerInterceptor,
   Controller,
   Delete,
+  Get,
+  Param,
   Post,
+  Query,
   Res,
   UseGuards,
   UseInterceptors,
@@ -63,5 +66,34 @@ export class StorageController {
       status: 'success',
       message: 'Delete files successfully',
     };
+  }
+
+  @Get('download-one')
+  @Roles(RoleTypes.ADMIN, RoleTypes.TEACHER)
+  @ApiBody({
+    type: DownloadFilesDto,
+  })
+  async downloadFile(@Query('path') path: string, @Res() res: Response) {
+    try {
+      const readable = await this.storageService.downloadFile(path);
+      if (readable) {
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename=${encodeURIComponent(path.split('/').pop() || `file`)}`,
+        );
+        readable.pipe(res);
+      } else {
+        res.status(400).json({
+          status: 'error',
+          message: 'File not found',
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        status: 'error',
+        message: `Error download: ${error.message}`,
+      });
+    }
   }
 }

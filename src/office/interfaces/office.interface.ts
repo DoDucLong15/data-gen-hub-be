@@ -29,6 +29,7 @@ export interface OfficeStrategy {
   ): Promise<void>;
   exportSingleByScript(
     classId: string,
+    studentIds: string[],
     templatePath: string,
     specificationPath: string,
     thesisType: ThesisDocumentEnum,

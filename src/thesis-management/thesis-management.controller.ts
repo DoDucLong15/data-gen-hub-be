@@ -53,7 +53,7 @@ import {
 @ApiBearerAuth()
 @Controller('thesis-management')
 @UseGuards(AccessTokenGuard, RolesGuard)
-@UseInterceptors(ClassSerializerInterceptor)
+// @UseInterceptors(ClassSerializerInterceptor)
 export class ThesisManagementController {
   constructor(private readonly thesisManagementService: ThesisManagementService) {}
 

@@ -459,6 +459,7 @@ export class ExcelStrategy implements OfficeStrategy {
   }
   async exportSingleByScript(
     classId: string,
+    studentIds: string[],
     templatePath: string,
     specificationPath: string,
     thesisType: ThesisDocumentEnum,
@@ -481,6 +482,7 @@ export class ExcelStrategy implements OfficeStrategy {
         ...(extraData ? ['-e', JSON.stringify(extraData)] : []),
         '-b',
         thesisType,
+        ...(studentIds?.length ? ['-si', studentIds.join(',')] : []),
       ]);
       Logger.verbose(output, 'ExcelStrategy.exportSingleByScript');
     } catch (error) {

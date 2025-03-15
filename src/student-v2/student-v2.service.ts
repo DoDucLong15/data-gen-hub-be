@@ -281,6 +281,7 @@ export class StudentServiceV2 {
       }
       await this.officeService.exportSingleByScript(
         request.classId,
+        request.studentIds,
         specification.templateFile,
         specification.jsonFile,
         request.thesisDocType,
