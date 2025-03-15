@@ -46,6 +46,7 @@ export class HtmlStrategy implements OfficeStrategy {
   }
   async exportListByScript(
     classId: string,
+    studentIds: string[],
     templatePath: string,
     specificationPath: string,
   ): Promise<void> {

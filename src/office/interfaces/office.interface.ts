@@ -23,6 +23,7 @@ export interface OfficeStrategy {
   importListByScript(inputPath: string, specificationPath: string, classId: string): Promise<void>;
   exportListByScript(
     classId: string,
+    studentIds: string[],
     templatePath: string,
     specificationPath: string,
   ): Promise<void>;
