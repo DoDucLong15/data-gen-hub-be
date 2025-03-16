@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsEnum, IsNotEmpty, IsObject } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsEnum, IsNotEmpty, IsObject, IsString } from 'class-validator';
 import { transformToArray, transformToJSON } from 'src/base/transformers/dto.transformer';
 
 export enum ImportExportDynamicType {
@@ -12,9 +12,7 @@ export class ImportExportDynamicDto {
   @ApiProperty({ type: 'array', items: { type: 'string', format: 'binary' }, required: true })
   inputFiles: any[];
 
-  @IsNotEmpty()
-  @IsObject()
-  @Transform(transformToJSON)
+  @ApiProperty({ type: 'string', format: 'binary', required: true })
   specificationInput: any;
 
   @IsNotEmpty()
@@ -24,12 +22,20 @@ export class ImportExportDynamicDto {
   @ApiProperty({ type: 'string', format: 'binary', required: true })
   templateFile: any;
 
-  @IsNotEmpty()
-  @IsObject()
-  @Transform(transformToJSON)
+  @ApiProperty({ type: 'string', format: 'binary', required: true })
   specificationOutput: any;
 
   @IsNotEmpty()
   @IsEnum(ImportExportDynamicType)
   exportType: ImportExportDynamicType;
+
+  @IsNotEmpty()
+  @IsArray()
+  @ArrayNotEmpty()
+  @Transform(transformToArray)
+  shareEmails: string[];
+
+  @IsNotEmpty()
+  @IsString()
+  classId: string;
 }

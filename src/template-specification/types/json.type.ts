@@ -6,8 +6,8 @@ export type SheetSingleType = {
     rows?: string /* Phạm vi trong file excel, từ dòng ... tới dòng .... list2db dùng cả 2 tham số. Với list2db.py, cho phép thiết lập 2:*, hoặc *:6 để phần mềm tự tìm dòng đầu, dòng cuối, hoặc cả 2. Đối với db2list.py chỉ dùng chỉ số đầu như là dòng đầu tiên xuất ra. */;
     cells: {
       cell: string;
-      dbField?: string; // dbfield mô tả trường dữ liệu đơn
-      dbFields?: string[]; // dbfields mô tả trường dữ liệu phức, ghép xâu các trường đơn để tổng hợp trước khí export khỏi db
+      dbfield?: string; // dbfield mô tả trường dữ liệu đơn
+      dbfields?: string[]; // dbfields mô tả trường dữ liệu phức, ghép xâu các trường đơn để tổng hợp trước khí export khỏi db
       const?: string; // const là hằng giá trị
       comment?: string; // chú thích
     }[];

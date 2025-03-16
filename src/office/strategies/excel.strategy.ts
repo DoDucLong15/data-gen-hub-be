@@ -68,7 +68,7 @@ export class ExcelStrategy implements OfficeStrategy {
               if (!cell) continue;
               let value = cell.v;
               if (typeof value === 'string') value = value.trim();
-              if (column.dbField) item[column.dbField] = column.const ?? value;
+              if (column.dbfield) item[column.dbfield] = column.const ?? value;
             }
             result.push(item as T);
           }
@@ -138,7 +138,7 @@ export class ExcelStrategy implements OfficeStrategy {
 
             const value =
               column.const ??
-              (column.dbField ? (list[row - minRow] as Record<string, any>)[column.dbField] : null);
+              (column.dbfield ? (list[row - minRow] as Record<string, any>)[column.dbfield] : null);
 
             cell.value = value ?? '';
             cell.style = prevStyle;
@@ -223,8 +223,8 @@ export class ExcelStrategy implements OfficeStrategy {
             for (const column of sheet.mapping.columns) {
               const value =
                 column.const ??
-                (column.dbField
-                  ? (list[row - minRow] as Record<string, any>)[column.dbField]
+                (column.dbfield
+                  ? (list[row - minRow] as Record<string, any>)[column.dbfield]
                   : null);
               workSheet[column.column + row] = {
                 v: value ?? '',
@@ -302,12 +302,12 @@ export class ExcelStrategy implements OfficeStrategy {
 
           const value =
             cell.const ??
-            (cell.dbField
-              ? (data as Record<string, any>)[cell.dbField]
-              : cell.dbFields
+            (cell.dbfield
+              ? (data as Record<string, any>)[cell.dbfield]
+              : cell.dbfields
                 ? CommonUtils.formatString(
-                    cell.dbFields[0],
-                    ...cell.dbFields
+                    cell.dbfields[0],
+                    ...cell.dbfields
                       .slice(1)
                       .map((field) => (data as Record<string, any>)[field].toString()),
                   )
@@ -392,7 +392,7 @@ export class ExcelStrategy implements OfficeStrategy {
           if (!workSheet) continue;
           for (const cell of sheet.mapping.cells) {
             const value = workSheet[cell.cell]?.v;
-            if (cell.dbField) result[cell.dbField] = cell.const ?? value;
+            if (cell.dbfield) result[cell.dbfield] = cell.const ?? value;
           }
         }
       }
