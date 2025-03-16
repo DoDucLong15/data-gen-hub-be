@@ -5,6 +5,7 @@ export enum EProgressType {
   GUIDANCE_REVIEW = ThesisDocumentEnum.GUIDANCE_REVIEW,
   SUPERVISORY_COMMENTS = ThesisDocumentEnum.SUPERVISORY_COMMENTS,
   STUDENT_LIST = 'student_list',
+  OTHER_DOCUMENT = 'other_document',
 }
 
 export enum EProgressStatus {

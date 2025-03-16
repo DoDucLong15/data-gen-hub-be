@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { OfficeStrategy } from './interfaces/office.interface';
 import { OfficeTypeEnum } from './enums/office-type.enum';
 import { ExcelStrategy } from './strategies/excel.strategy';
@@ -9,17 +9,27 @@ import { FileTypes } from 'src/template-specification/enums/file-type.enum';
 import { JsonMappingListType } from './types/json-mapping-list.type';
 import { JsonMappingSingleType } from 'src/template-specification/types/json.type';
 import { ImportExportDynamicDto, ImportExportDynamicType } from './dtos/office.dto';
-import { Response } from 'express';
 import { CommonUtils } from 'src/utils/common.util';
 import { PythonScriptService } from 'src/python-script/python-script.service';
 import { FileExtension } from 'src/template-specification/constants/extension.const';
 import { ThesisDocumentEnum } from 'src/thesis-management/enums/thesis-document.enum';
+import { ProgressService } from 'src/progress/progress.service';
+import { ActionEnum } from 'src/template-specification/enums/action.enum';
+import { UserPayload } from 'src/auth/types/user-playload.type';
+import { EProgressType } from 'src/progress/constant/progress.const';
+import { MailerService } from 'src/mailer/mailer.service';
+import { PassThrough, Readable } from 'stream';
 const archiver = require('archiver');
 
 @Injectable()
 export class OfficeService {
   private officeStrategy: Record<string, OfficeStrategy> = {};
-  constructor(private readonly pythonScriptService: PythonScriptService) {
+  constructor(
+    private readonly pythonScriptService: PythonScriptService,
+    @Inject(forwardRef(() => ProgressService))
+    private readonly progressService: ProgressService,
+    private readonly mailerService: MailerService,
+  ) {
     this.use(OfficeTypeEnum.EXCEL, new ExcelStrategy(pythonScriptService));
     this.use(OfficeTypeEnum.WORD, new WordStrategy(pythonScriptService));
     this.use(OfficeTypeEnum.HTML, new HtmlStrategy(pythonScriptService));
@@ -100,24 +110,43 @@ export class OfficeService {
 
   async dynamic(
     inputFiles: Express.Multer.File[],
+    specificationInput: Express.Multer.File,
     request: ImportExportDynamicDto,
     templateFile: Express.Multer.File,
-    res: Response,
-  ) {
+    specificationOutput: Express.Multer.File,
+    processId: string,
+    user: UserPayload,
+  ): Promise<void> {
+    const errorCollector: Record<string, any> = {};
     try {
+      await this.progressService.createProgress([
+        {
+          processId,
+          type: EProgressType.OTHER_DOCUMENT,
+          action: ActionEnum.EXPORT,
+          createBy: user.email,
+          classId: request.classId,
+        },
+      ]);
       const inputData = [];
       const unzipInputFiles = await CommonUtils.unzip(inputFiles);
       if (request.importType === ImportExportDynamicType.LIST) {
         for (const file of unzipInputFiles) {
-          const data = await this.importList<any>(file, request.specificationInput);
+          const data = await this.importList<any>(
+            file,
+            JSON.parse(specificationInput.buffer.toString()),
+          );
           data.map((item) => {
             if (item && Object.keys(item).length) inputData.push(item);
           });
         }
       } else {
         for (const file of unzipInputFiles) {
-          const data = await this.importSingle<any>(file, request.specificationInput);
-          if (data && Object.keys(data)) inputData.push(data);
+          const data = await this.importSingle<any>(
+            file,
+            JSON.parse(specificationInput.buffer.toString()),
+          );
+          if (data && Object.keys(data).length) inputData.push(data);
         }
       }
       const outputData: Express.Multer.File[] = [];
@@ -125,7 +154,7 @@ export class OfficeService {
         const data = await this.exportList<any>(
           inputData,
           templateFile,
-          request.specificationOutput,
+          JSON.parse(specificationOutput.buffer.toString()),
         );
         outputData.push(data as Express.Multer.File);
       } else {
@@ -133,29 +162,56 @@ export class OfficeService {
           const output = await this.exportSingle<any>(
             data,
             templateFile,
-            request.specificationOutput,
+            JSON.parse(specificationOutput.buffer.toString()),
           );
           outputData.push(output as Express.Multer.File);
         }
       }
+      // Zip to send mail
+      // Tạo một stream để lưu dữ liệu zip
+      const zipBuffer = await new Promise<Buffer>((resolve, reject) => {
+        const chunks: Buffer[] = [];
+        const passThrough = new PassThrough();
 
-      res.setHeader('Content-Type', 'application/zip');
-      res.setHeader('Content-Disposition', `attachment; filename=${Date.now()}.zip`);
+        passThrough.on('data', (chunk) => chunks.push(chunk));
+        passThrough.on('end', () => resolve(Buffer.concat(chunks)));
+        passThrough.on('error', reject);
 
-      const archive = archiver('zip', { zlib: { level: 9 } });
-      archive.pipe(res);
+        const archive = archiver('zip', {
+          zlib: { level: 9 },
+        });
 
-      outputData.forEach((file) => {
-        archive.append(file.buffer, { name: file.originalname });
+        archive.on('error', reject);
+
+        // Pipe archive vào passThrough
+        archive.pipe(passThrough);
+
+        // Thêm các file vào archive
+        outputData.forEach((file) => {
+          archive.append(file.buffer, { name: file.originalname });
+        });
+
+        // Kết thúc archiver để hoàn thành quá trình
+        archive.finalize();
       });
 
-      archive.finalize();
+      await this.mailerService.sendEmail({
+        to: request.shareEmails.join(','),
+        subject: `Other Document Export - ${new Date().toLocaleString()}`,
+        content: 'Please find the attachment for the exported files',
+        attachments: [
+          {
+            filename: `exported_files_${Date.now()}.zip`,
+            content: zipBuffer,
+          },
+        ],
+      });
+
+      await this.progressService.makeCompleted({ processId }, { error: errorCollector });
     } catch (error) {
       Logger.error(error.message, error.stack, 'OfficeService.dynamic');
-      res.status(500).json({
-        status: 'error',
-        message: `Error generating student form data: ${error.message}`,
-      });
+      errorCollector['unknown'] = error.message;
+      await this.progressService.makeFailed({ processId }, { error: errorCollector });
     }
   }
 
