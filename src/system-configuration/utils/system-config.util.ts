@@ -20,6 +20,7 @@ export class SystemConfigUtils {
     string,
     JsonMappingSingleType
   > = TemplateSpecificationImportSingleStudent;
+  public static adminEmails: string[];
 
   static getValue(entity: SystemConfigEntity): string | number | boolean | any {
     if (CommonUtils.isNotNullish(entity.stringValue)) return entity.stringValue;

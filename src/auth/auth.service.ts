@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { RefreshTokenRequest, SignInDto } from './dtos/sign-in.dto';
 import { SignInResponse } from './types/signin-response.type';
 import { UsersService } from 'src/users/users.service';
@@ -8,6 +8,11 @@ import { ConfigService } from '@nestjs/config';
 import { RoleTypes } from 'src/users/enums/role-types.enum';
 import { JwtService } from '@nestjs/jwt';
 import { UserPayload } from './types/user-playload.type';
+import { MailerService } from 'src/mailer/mailer.service';
+import { CreateUserDto } from 'src/users/dtos/user.dto';
+import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.util';
+import { TemplateHelper } from 'src/mailer/helpers/template.helper';
+import { BaseResponse } from 'src/base/types/response.type';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +20,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly mailerService: MailerService,
   ) {}
 
   async signIn(request: SignInDto): Promise<SignInResponse> {
@@ -81,5 +87,31 @@ export class AuthService {
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }
+  }
+
+  async register(request: CreateUserDto): Promise<BaseResponse> {
+    const existingUser = await this.usersService.getUser({
+      where: { email: request.email },
+    });
+    if (existingUser) {
+      throw new BadRequestException('User already exists');
+    }
+    if (SystemConfigUtils.adminEmails.length === 0) {
+      Logger.warn('No admin emails found', 'AuthService');
+    } else {
+      this.mailerService
+        .sendEmail({
+          to: SystemConfigUtils.adminEmails.join(','),
+          subject: 'New user registered',
+          content: TemplateHelper.getTemplateNotifyAdminNewUser(request),
+        })
+        .catch((error) => {
+          Logger.error(error, 'AuthService.register');
+        });
+    }
+    return {
+      status: 'success',
+      message: 'User registered successfully',
+    };
   }
 }
