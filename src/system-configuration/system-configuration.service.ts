@@ -75,6 +75,12 @@ export class SystemConfigurationService {
               'SystemConfigService',
             );
           }
+        } else if (config.key === Keys.ADMIN_EMAILS) {
+          const jsonValue = SCU.getJson(config);
+          if (jsonValue) {
+            SystemConfigUtils.adminEmails = jsonValue;
+            Logger.verbose(`Updated ADMIN_EMAILS`, 'SystemConfigService');
+          }
         }
       }
     } catch (error) {
