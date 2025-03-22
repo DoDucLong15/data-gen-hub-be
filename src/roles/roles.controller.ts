@@ -22,6 +22,7 @@ export class RolesController {
       .getRoles({
         relations: {
           users: true,
+          permissions: true,
         },
       })
       .then((roles) =>
