@@ -21,6 +21,7 @@ export class SystemConfigUtils {
     JsonMappingSingleType
   > = TemplateSpecificationImportSingleStudent;
   public static adminEmails: string[];
+  public static approveRegisterUrl: string;
 
   static getValue(entity: SystemConfigEntity): string | number | boolean | any {
     if (CommonUtils.isNotNullish(entity.stringValue)) return entity.stringValue;

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { RegisterEntity } from '../entities/register.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
@@ -7,6 +7,9 @@ import { UsersService } from '../users.service';
 import { RoleService } from './role.service';
 import { ApproveRegisterDto } from '../dtos/register.dto';
 import { BaseResponse } from 'src/base/types/response.type';
+import { MailerService } from 'src/mailer/mailer.service';
+import { TemplateHelper } from 'src/mailer/helpers/template.helper';
+import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.util';
 
 @Injectable()
 export class RegisterService {
@@ -15,6 +18,7 @@ export class RegisterService {
     private readonly registerRepository: Repository<RegisterEntity>,
     private readonly usersService: UsersService,
     private readonly roleService: RoleService,
+    private readonly mailerService: MailerService,
   ) {}
 
   async createRegister(request: CreateUserDto): Promise<RegisterEntity> {
@@ -43,6 +47,15 @@ export class RegisterService {
     });
     if (!register) throw new BadRequestException('Register not found');
     await this.registerRepository.delete(id);
+    this.mailerService
+      .sendEmail({
+        to: register.email,
+        subject: 'Yêu cầu đăng ký đã bị từ chối',
+        content: TemplateHelper.getTemplateNotifyAdminRejectRegister(register),
+      })
+      .catch((error) => {
+        Logger.error(error, 'RegisterService.rejectRegister');
+      });
     return {
       status: 'success',
       message: 'Register rejected successfully',
@@ -60,6 +73,15 @@ export class RegisterService {
       ...register,
       role: role.name,
     });
+    this.mailerService
+      .sendEmail({
+        to: register.email,
+        subject: 'Yêu cầu đăng ký đã được chấp nhận',
+        content: TemplateHelper.getTemplateNotifyAdminApproveRegister(register, role.name),
+      })
+      .catch((error) => {
+        Logger.error(error, 'RegisterService.approveRegister');
+      });
     return {
       status: 'success',
       message: 'Register approved successfully',
