@@ -37,6 +37,7 @@ export class PermissionsService {
       subject: dto.subject,
       fields: dto.fields,
       conditions: dto.conditions,
+      description: dto.description,
     } as PermissionEntity;
     return await this.permissionRepository.save(newPermission);
   }
@@ -55,6 +56,8 @@ export class PermissionsService {
       action: dto.action ?? permission.action,
       subject: dto.subject ?? permission.subject,
       fields: dto.fields ?? permission.fields,
+      conditions: dto.conditions ?? permission.conditions,
+      description: dto.description ?? permission.description,
     } as PermissionEntity;
     return await this.permissionRepository.save(updatedPermission);
   }

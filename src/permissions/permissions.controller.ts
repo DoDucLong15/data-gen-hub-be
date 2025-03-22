@@ -38,6 +38,10 @@ export class PermissionsController {
   @Get()
   @CheckPolicies({ action: EAction.READ, subject: ESubject.System_Permissions })
   async getPermissions(): Promise<PermissionEntity[]> {
-    return this.permissionsService.getPermissions();
+    return this.permissionsService.getPermissions({
+      order: {
+        createdAt: 'DESC',
+      },
+    });
   }
 }
