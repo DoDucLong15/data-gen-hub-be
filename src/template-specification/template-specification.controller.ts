@@ -15,9 +15,6 @@ import {
 import { TemplateSpecificationService } from './template-specification.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
-import { RolesGuard } from 'src/auth/guards/role.guard';
-import { Roles } from 'src/auth/decorators/role.decorator';
-import { RoleTypes } from 'src/users/enums/role-types.enum';
 import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import {
   CreateTemplateSpecificationDto,
@@ -26,17 +23,21 @@ import {
 import { User } from 'src/auth/decorators/user.decorator';
 import { UserPayload } from 'src/auth/types/user-playload.type';
 import { TemplateSpecificationEntity } from './entities/template-specification.entity';
+import { PoliciesGuard } from 'src/authorization/guards/policies.guard';
+import { ESubject } from 'src/authorization/enums/subject.enum';
+import { CheckPolicies } from 'src/authorization/decorators/check-policies.decorator';
+import { EAction } from 'src/permissions/enums/action.enum';
 
 @ApiTags('Template Specification')
 @ApiBearerAuth()
 @Controller('template-specification')
-@UseGuards(AccessTokenGuard, RolesGuard)
-@Roles(RoleTypes.ADMIN, RoleTypes.TEACHER)
+@UseGuards(AccessTokenGuard, PoliciesGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 export class TemplateSpecificationController {
   constructor(private readonly templateSpecificationService: TemplateSpecificationService) {}
 
   @Post()
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Students })
   @UseInterceptors(
     FileFieldsInterceptor(
       [
@@ -72,6 +73,7 @@ export class TemplateSpecificationController {
   }
 
   @Patch()
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Students })
   @UseInterceptors(
     FileFieldsInterceptor(
       [
@@ -107,6 +109,7 @@ export class TemplateSpecificationController {
   }
 
   @Delete(':id')
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Students })
   async delete(@Param('id') id: string, @User() user: UserPayload): Promise<boolean> {
     return await this.templateSpecificationService.delete(id, user);
   }

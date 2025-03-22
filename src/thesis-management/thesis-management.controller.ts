@@ -48,16 +48,25 @@ import {
   GetListSupervisoryCommentsDto,
   UpdateSupervisoryCommentsDto,
 } from './dtos/supervisory-comments.dto';
+import { EAction } from 'src/permissions/enums/action.enum';
+import { CheckPolicies } from 'src/authorization/decorators/check-policies.decorator';
+import { ESubject } from 'src/authorization/enums/subject.enum';
+import { PoliciesGuardV2 } from 'src/authorization/guards/policies-v2.guard';
+import { CheckPoliciesV2 } from 'src/authorization/decorators/check-policies-v2.decorator';
 
 @ApiTags('Thesis Management')
 @ApiBearerAuth()
 @Controller('thesis-management')
-@UseGuards(AccessTokenGuard, RolesGuard)
-// @UseInterceptors(ClassSerializerInterceptor)
+@UseGuards(AccessTokenGuard, PoliciesGuardV2)
 export class ThesisManagementController {
   constructor(private readonly thesisManagementService: ThesisManagementService) {}
 
   @Post()
+  @CheckPoliciesV2(
+    { action: EAction.MANAGE, subject: ESubject.Thesis_AssignmentSheets },
+    { action: EAction.MANAGE, subject: ESubject.Thesis_GuidanceReviews },
+    { action: EAction.MANAGE, subject: ESubject.Thesis_SupervisoryComments },
+  )
   @ApiExtraModels(CreateAssignmentSheetDto, CreateGuidanceReviewDto, CreateSupervisoryCommentsDto)
   @ApiBody({
     schema: {
@@ -77,6 +86,11 @@ export class ThesisManagementController {
   }
 
   @Patch()
+  @CheckPoliciesV2(
+    { action: EAction.MANAGE, subject: ESubject.Thesis_AssignmentSheets },
+    { action: EAction.MANAGE, subject: ESubject.Thesis_GuidanceReviews },
+    { action: EAction.MANAGE, subject: ESubject.Thesis_SupervisoryComments },
+  )
   @ApiExtraModels(UpdateAssignmentSheetDto, UpdateGuidanceReviewDto, UpdateSupervisoryCommentsDto)
   @ApiBody({
     schema: {
@@ -101,6 +115,11 @@ export class ThesisManagementController {
   // }
 
   @Post('list')
+  @CheckPoliciesV2(
+    { action: EAction.READ, subject: ESubject.Thesis_AssignmentSheets },
+    { action: EAction.READ, subject: ESubject.Thesis_GuidanceReviews },
+    { action: EAction.READ, subject: ESubject.Thesis_SupervisoryComments },
+  )
   @ApiExtraModels(
     GetListAssignmentSheetDto,
     GetListGuidanceReviewDto,
@@ -124,6 +143,11 @@ export class ThesisManagementController {
   }
 
   @Delete()
+  @CheckPoliciesV2(
+    { action: EAction.MANAGE, subject: ESubject.Thesis_AssignmentSheets },
+    { action: EAction.MANAGE, subject: ESubject.Thesis_GuidanceReviews },
+    { action: EAction.MANAGE, subject: ESubject.Thesis_SupervisoryComments },
+  )
   @ApiExtraModels(DeleteAssignmentSheetDto, DeleteGuidanceReviewDto, DeleteSupervisoryCommentsDto)
   @ApiBody({
     schema: {
@@ -143,6 +167,11 @@ export class ThesisManagementController {
   }
 
   @Post('download-file')
+  @CheckPoliciesV2(
+    { action: EAction.READ, subject: ESubject.Thesis_AssignmentSheets },
+    { action: EAction.READ, subject: ESubject.Thesis_GuidanceReviews },
+    { action: EAction.READ, subject: ESubject.Thesis_SupervisoryComments },
+  )
   @ApiExtraModels(
     DownloadFileAssignmentSheetDto,
     DownloadFileGuidanceReviewDto,
@@ -170,6 +199,11 @@ export class ThesisManagementController {
   }
 
   @Post('delete-file')
+  @CheckPoliciesV2(
+    { action: EAction.MANAGE, subject: ESubject.Thesis_AssignmentSheets },
+    { action: EAction.MANAGE, subject: ESubject.Thesis_GuidanceReviews },
+    { action: EAction.MANAGE, subject: ESubject.Thesis_SupervisoryComments },
+  )
   @ApiExtraModels(
     DeleteFileAssignmentSheetDto,
     DeleteFileGuidanceReviewDto,

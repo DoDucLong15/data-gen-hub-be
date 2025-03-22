@@ -7,6 +7,7 @@ import { ClassModule } from 'src/class/class.module';
 import { OfficeModule } from 'src/office/office.module';
 import { TemplateSpecificationModule } from 'src/template-specification/template-specification.module';
 import { StorageModule } from 'src/storage/storage.module';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { StorageModule } from 'src/storage/storage.module';
     forwardRef(() => OfficeModule),
     forwardRef(() => TemplateSpecificationModule),
     forwardRef(() => StorageModule),
+    forwardRef(() => UsersModule),
   ],
   controllers: [StudentsController],
   providers: [StudentsService],

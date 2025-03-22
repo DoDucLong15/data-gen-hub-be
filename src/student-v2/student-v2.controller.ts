@@ -12,9 +12,6 @@ import {
 import { StudentServiceV2 } from './student-v2.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
-import { RolesGuard } from 'src/auth/guards/role.guard';
-import { Roles } from 'src/auth/decorators/role.decorator';
-import { RoleTypes } from 'src/users/enums/role-types.enum';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ImportListStudentRequest,
@@ -29,17 +26,21 @@ import {
 } from 'src/students/dtos/export-data.dto';
 import { Response } from 'express';
 import { ProgressService } from 'src/progress/progress.service';
+import { PoliciesGuard } from 'src/authorization/guards/policies.guard';
+import { CheckPolicies } from 'src/authorization/decorators/check-policies.decorator';
+import { EAction } from 'src/permissions/enums/action.enum';
+import { ESubject } from 'src/authorization/enums/subject.enum';
 
 @ApiTags('Student V2')
 @ApiBearerAuth()
 @Controller('student-v2')
-@UseGuards(AccessTokenGuard, RolesGuard)
-@Roles(RoleTypes.ADMIN, RoleTypes.TEACHER)
+@UseGuards(AccessTokenGuard, PoliciesGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 export class StudentControllerV2 {
   constructor(private readonly studentV2Service: StudentServiceV2) {}
 
   @Post('student-list/import')
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Students })
   @UseInterceptors(
     FilesInterceptor('files', 10, {
       limits: {
@@ -72,6 +73,7 @@ export class StudentControllerV2 {
   }
 
   @Post('student-list/export')
+  @CheckPolicies({ action: EAction.READ, subject: ESubject.Students })
   async exportList(
     @Body() request: ExportListStudentRequestV2,
     @User() user: UserPayload,
@@ -82,6 +84,7 @@ export class StudentControllerV2 {
   }
 
   @Post('thesis-document/export')
+  @CheckPolicies({ action: EAction.READ, subject: ESubject.Students })
   async generate(
     @Body() request: ExportStudentFormDataRequestV2,
     @User() user: UserPayload,
@@ -102,6 +105,7 @@ export class StudentControllerV2 {
   }
 
   @Post('thesis-document/import')
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Students })
   @UseInterceptors(
     FilesInterceptor('files', 10, {
       limits: {

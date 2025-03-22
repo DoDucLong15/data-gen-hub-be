@@ -22,6 +22,7 @@ import { StudentModuleV2 } from './student-v2/student-v2.module';
 import { ProgressModule } from './progress/progress.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
+import { AuthorizationModule } from './authorization/authorization.module';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -58,6 +59,7 @@ const environment = process.env.NODE_ENV ?? 'local';
     ProgressModule,
     RolesModule,
     PermissionsModule,
+    AuthorizationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

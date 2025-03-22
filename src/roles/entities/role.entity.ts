@@ -19,6 +19,7 @@ export class RoleEnity extends AbstractAuditingEntity {
   @ManyToMany(() => PermissionEntity, (permission) => permission.roles, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
+    eager: true,
   })
   permissions: PermissionEntity[];
 }
