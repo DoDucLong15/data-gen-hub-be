@@ -5,12 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TemplateSpecificationEntity } from './entities/template-specification.entity';
 import { StorageModule } from 'src/storage/storage.module';
 import { ClassModule } from 'src/class/class.module';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([TemplateSpecificationEntity]),
     StorageModule,
     forwardRef(() => ClassModule),
+    forwardRef(() => UsersModule),
   ],
   controllers: [TemplateSpecificationController],
   providers: [TemplateSpecificationService],

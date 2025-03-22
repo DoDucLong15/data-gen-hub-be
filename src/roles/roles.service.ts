@@ -1,15 +1,17 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
-import { RoleEnity } from '../entities/role.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { RoleTypes } from '../enums/role-types.enum';
-import { CreateRoleDto, UpdateRoleDto } from '../dtos/role.dto';
+import { RoleEnity } from './entities/role.entity';
+import { FindManyOptions, FindOneOptions, In, Repository } from 'typeorm';
+import { UpdateRoleDto } from './dtos/role.dto';
+import { CreateRoleDto } from './dtos/role.dto';
+import { PermissionsService } from 'src/permissions/permissions.service';
 
 @Injectable()
-export class RoleService {
+export class RolesService {
   constructor(
     @InjectRepository(RoleEnity)
     private readonly roleRepository: Repository<RoleEnity>,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   async findRoleByName(name: string): Promise<RoleEnity> {
@@ -22,8 +24,12 @@ export class RoleService {
     return role;
   }
 
-  async getRoles(): Promise<RoleEnity[]> {
-    return await this.roleRepository.find();
+  async getRoles(options?: FindManyOptions<RoleEnity> | undefined): Promise<RoleEnity[]> {
+    return await this.roleRepository.find(options);
+  }
+
+  async getRole(options: FindOneOptions<RoleEnity>): Promise<RoleEnity | null> {
+    return await this.roleRepository.findOne(options);
   }
 
   async getRoleById(id: string): Promise<RoleEnity> {
@@ -41,7 +47,13 @@ export class RoleService {
     if (role) {
       throw new BadRequestException('Role already exists');
     }
-    return await this.roleRepository.save(request);
+    const permissions = await this.permissionsService.getPermissions({
+      where: { id: In(request.permissionIds) },
+    });
+    return await this.roleRepository.save({
+      ...request,
+      permissions,
+    });
   }
 
   async updateRole(request: UpdateRoleDto): Promise<RoleEnity> {
@@ -59,6 +71,13 @@ export class RoleService {
         throw new BadRequestException('Role already exists');
       }
     }
+    if (request.permissionIds) {
+      const permissions = await this.permissionsService.getPermissions({
+        where: { id: In(request.permissionIds) },
+      });
+      role.permissions = permissions;
+    }
+    delete request.permissionIds;
     return await this.roleRepository.save({
       ...role,
       ...request,

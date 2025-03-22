@@ -20,6 +20,10 @@ import { ThesisManagementModule } from './thesis-management/thesis-management.mo
 import { PythonScriptModule } from './python-script/python-script.module';
 import { StudentModuleV2 } from './student-v2/student-v2.module';
 import { ProgressModule } from './progress/progress.module';
+import { RolesModule } from './roles/roles.module';
+import { PermissionsModule } from './permissions/permissions.module';
+import { AuthorizationModule } from './authorization/authorization.module';
+import { MockModule } from './mock/mock.module';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -54,6 +58,10 @@ const environment = process.env.NODE_ENV ?? 'local';
     PythonScriptModule,
     StudentModuleV2,
     ProgressModule,
+    RolesModule,
+    PermissionsModule,
+    AuthorizationModule,
+    MockModule,
   ],
   controllers: [AppController],
   providers: [AppService],

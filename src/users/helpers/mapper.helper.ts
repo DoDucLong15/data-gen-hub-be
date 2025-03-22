@@ -14,5 +14,10 @@ export const MapperUserResponse = (user: UserEntity): UserResponse => {
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     deletedAt: user.deletedAt,
+    roleId: user.role.id,
+    permissions: user.role?.permissions?.map((permission) => ({
+      action: permission.action,
+      subject: permission.subject,
+    })),
   };
 };

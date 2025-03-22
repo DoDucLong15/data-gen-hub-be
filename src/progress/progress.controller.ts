@@ -2,24 +2,25 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ProgressService } from './progress.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
-import { RolesGuard } from 'src/auth/guards/role.guard';
-import { Roles } from 'src/auth/decorators/role.decorator';
-import { RoleTypes } from 'src/users/enums/role-types.enum';
 import { GetProgressDto } from './dtos/progress.dto';
 import { CommonUtils } from 'src/utils/common.util';
 import { In } from 'typeorm';
 import { User } from 'src/auth/decorators/user.decorator';
 import { UserPayload } from 'src/auth/types/user-playload.type';
+import { PoliciesGuard } from 'src/authorization/guards/policies.guard';
+import { EAction } from 'src/permissions/enums/action.enum';
+import { CheckPolicies } from 'src/authorization/decorators/check-policies.decorator';
+import { ESubject } from 'src/authorization/enums/subject.enum';
 
 @ApiTags('Progress')
 @ApiBearerAuth()
 @Controller('progress')
-@UseGuards(AccessTokenGuard, RolesGuard)
-@Roles(RoleTypes.ADMIN, RoleTypes.TEACHER)
+@UseGuards(AccessTokenGuard, PoliciesGuard)
 export class ProgressController {
   constructor(private readonly progressService: ProgressService) {}
 
   @Get()
+  @CheckPolicies({ action: EAction.READ, subject: ESubject.Progress })
   async getNotificationProgress(@Query() query: GetProgressDto, @User() user: UserPayload) {
     return await this.progressService.getMany({
       where: {

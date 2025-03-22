@@ -16,9 +16,6 @@ import {
 import { StudentsService } from './students.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
-import { RolesGuard } from 'src/auth/guards/role.guard';
-import { Roles } from 'src/auth/decorators/role.decorator';
-import { RoleTypes } from 'src/users/enums/role-types.enum';
 import { CreateStudentDto, UpdateStudentDto } from './dtos/student.dto';
 import { User } from 'src/auth/decorators/user.decorator';
 import { UserPayload } from 'src/auth/types/user-playload.type';
@@ -29,17 +26,21 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ExportListStudentRequest, ExportStudentFormDataRequest } from './dtos/export-data.dto';
 import { Response } from 'express';
 import { request } from 'http';
+import { PoliciesGuard } from 'src/authorization/guards/policies.guard';
+import { EAction } from 'src/permissions/enums/action.enum';
+import { CheckPolicies } from 'src/authorization/decorators/check-policies.decorator';
+import { ESubject } from 'src/authorization/enums/subject.enum';
 
 @ApiTags('Student')
 @ApiBearerAuth()
 @Controller('students')
-@UseGuards(AccessTokenGuard, RolesGuard)
-@Roles(RoleTypes.ADMIN, RoleTypes.TEACHER)
+@UseGuards(AccessTokenGuard, PoliciesGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 
   @Post()
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Students })
   async create(
     @Body() request: CreateStudentDto,
     @User() user: UserPayload,
@@ -48,6 +49,7 @@ export class StudentsController {
   }
 
   @Get(':classId')
+  @CheckPolicies({ action: EAction.READ, subject: ESubject.Students })
   async list(
     @Param('classId') classId: string,
     @User() user: UserPayload,
@@ -56,11 +58,13 @@ export class StudentsController {
   }
 
   @Delete(':id')
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Students })
   async delete(@Param('id') id: string, @User() user: UserPayload): Promise<BaseResponse> {
     return await this.studentsService.delete(id, user);
   }
 
   @Patch()
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Students })
   async update(
     @Body() request: UpdateStudentDto,
     @User() user: UserPayload,
@@ -69,6 +73,7 @@ export class StudentsController {
   }
 
   @Post('import/list')
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Students })
   @UseInterceptors(
     FilesInterceptor('files', 10, {
       limits: {
@@ -89,6 +94,7 @@ export class StudentsController {
   }
 
   @Post('export/list')
+  @CheckPolicies({ action: EAction.READ, subject: ESubject.Students })
   @UseInterceptors(
     FileInterceptor('file', {
       limits: {
@@ -110,6 +116,7 @@ export class StudentsController {
   }
 
   @Post('generate')
+  @CheckPolicies({ action: EAction.READ, subject: ESubject.Students })
   async generate(
     @Body() request: ExportStudentFormDataRequest,
     @User() user: UserPayload,
@@ -119,6 +126,7 @@ export class StudentsController {
   }
 
   @Post('import/single')
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Students })
   @UseInterceptors(
     FilesInterceptor('files', 10, {
       limits: {

@@ -12,27 +12,28 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
-import { Roles } from 'src/auth/decorators/role.decorator';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
-import { RolesGuard } from 'src/auth/guards/role.guard';
-import { RoleTypes } from 'src/users/enums/role-types.enum';
 import { StorageService } from './storage.service';
 import { Response } from 'express';
 import { streamToBuffer } from './helpers/convert.helper';
 import { DownloadFilesDto } from './dtos/storage.dto';
 import { BaseResponse } from 'src/base/types/response.type';
+import { PoliciesGuard } from 'src/authorization/guards/policies.guard';
+import { EAction } from 'src/permissions/enums/action.enum';
+import { CheckPolicies } from 'src/authorization/decorators/check-policies.decorator';
+import { ESubject } from 'src/authorization/enums/subject.enum';
 const archiver = require('archiver');
 
 @ApiTags('Storage')
 @ApiBearerAuth()
 @Controller('storage')
-@UseGuards(AccessTokenGuard, RolesGuard)
+@UseGuards(AccessTokenGuard, PoliciesGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 export class StorageController {
   constructor(private readonly storageService: StorageService) {}
 
   @Post('download')
-  @Roles(RoleTypes.ADMIN, RoleTypes.TEACHER)
+  @CheckPolicies({ action: EAction.READ, subject: ESubject.Storage })
   @ApiBody({
     type: DownloadFilesDto,
   })
@@ -57,7 +58,7 @@ export class StorageController {
   }
 
   @Delete('delete')
-  @Roles(RoleTypes.ADMIN)
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Storage })
   async deleteFiles(@Body() request: DownloadFilesDto): Promise<BaseResponse> {
     for (const path of request.paths) {
       await this.storageService.deleteFile(path);
@@ -69,7 +70,7 @@ export class StorageController {
   }
 
   @Get('download-one')
-  @Roles(RoleTypes.ADMIN, RoleTypes.TEACHER)
+  @CheckPolicies({ action: EAction.READ, subject: ESubject.Storage })
   @ApiBody({
     type: DownloadFilesDto,
   })

@@ -15,20 +15,20 @@ import { ImportExportDynamicDto } from './dtos/office.dto';
 import { Response } from 'express';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { Roles } from 'src/auth/decorators/role.decorator';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
-import { RolesGuard } from 'src/auth/guards/role.guard';
-import { RoleTypes } from 'src/users/enums/role-types.enum';
 import { BaseResponse } from 'src/base/types/response.type';
 import { ProgressService } from 'src/progress/progress.service';
 import { User } from 'src/auth/decorators/user.decorator';
 import { UserPayload } from 'src/auth/types/user-playload.type';
+import { PoliciesGuard } from 'src/authorization/guards/policies.guard';
+import { EAction } from 'src/permissions/enums/action.enum';
+import { CheckPolicies } from 'src/authorization/decorators/check-policies.decorator';
+import { ESubject } from 'src/authorization/enums/subject.enum';
 
 @ApiTags('Office')
 @ApiBearerAuth()
 @Controller('office')
-@UseGuards(AccessTokenGuard, RolesGuard)
-@Roles(RoleTypes.ADMIN, RoleTypes.TEACHER)
+@UseGuards(AccessTokenGuard, PoliciesGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 export class OfficeController {
   constructor(private readonly officeService: OfficeService) {}
@@ -53,6 +53,7 @@ export class OfficeController {
       },
     ),
   )
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_OtherDocuments })
   async importExportDynamic(
     @UploadedFiles()
     files: {

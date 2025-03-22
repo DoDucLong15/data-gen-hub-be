@@ -7,6 +7,7 @@ import { ClassModule } from 'src/class/class.module';
 import { TemplateSpecificationModule } from 'src/template-specification/template-specification.module';
 import { StorageModule } from 'src/storage/storage.module';
 import { ProgressModule } from 'src/progress/progress.module';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ProgressModule } from 'src/progress/progress.module';
     forwardRef(() => TemplateSpecificationModule),
     forwardRef(() => StorageModule),
     forwardRef(() => ProgressModule),
+    forwardRef(() => UsersModule),
   ],
   controllers: [StudentControllerV2],
   providers: [StudentServiceV2],

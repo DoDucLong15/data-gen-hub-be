@@ -7,6 +7,7 @@ import { GuidanceReviewEntity } from './entities/guidance-review.entity';
 import { SupervisoryCommentsEntity } from './entities/supervisory-comments.entity';
 import { ClassModule } from 'src/class/class.module';
 import { StorageModule } from 'src/storage/storage.module';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { StorageModule } from 'src/storage/storage.module';
     ]),
     forwardRef(() => ClassModule),
     forwardRef(() => StorageModule),
+    forwardRef(() => UsersModule),
   ],
   controllers: [ThesisManagementController],
   providers: [ThesisManagementService],

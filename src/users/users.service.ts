@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
 import { CreateUserDto, UpdateUserDto } from './dtos/user.dto';
-import { RoleService } from './sub-services/role.service';
+import { RolesService } from 'src/roles/roles.service';
 import { MapperUserResponse } from './helpers/mapper.helper';
 import { UserResponse } from './types/user-response.type';
 import { MailerService } from 'src/mailer/mailer.service';
@@ -11,13 +11,25 @@ import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.
 import { TemplateHelper } from 'src/mailer/helpers/template.helper';
 import { UserPayload } from 'src/auth/types/user-playload.type';
 import { RoleTypes } from './enums/role-types.enum';
+import { PermissionEntity } from 'src/permissions/entities/permission.entity';
+import {
+  AbilityBuilder,
+  AbilityTuple,
+  createMongoAbility,
+  MongoAbility,
+  MongoQuery,
+} from '@casl/ability';
 
 @Injectable()
 export class UsersService {
+  private principalAbility: Record<
+    string,
+    { time: number; ability: MongoAbility<AbilityTuple, MongoQuery> }
+  > = {};
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
-    private readonly roleService: RoleService,
+    private readonly roleService: RolesService,
     private readonly mailerService: MailerService,
   ) {}
 
@@ -28,7 +40,7 @@ export class UsersService {
     if (existingUser) {
       throw new BadRequestException(`User ${dto.email} already exists`);
     }
-    const role = await this.roleService.findRoleByName(dto.role);
+    const role = await this.roleService.getRoleById(dto.roleId);
     const newUser = await this.userRepository.save({
       ...dto,
       role: role,
@@ -115,5 +127,44 @@ export class UsersService {
 
   async getUser(options: FindOneOptions<UserEntity>): Promise<UserEntity | null> {
     return await this.userRepository.findOne(options);
+  }
+
+  async getPrincipalAbility(email: string): Promise<MongoAbility<AbilityTuple, MongoQuery>> {
+    const key = `${email}`;
+    let ability = this.principalAbility[key]?.ability;
+    if (!this.principalAbility[key] || this.principalAbility[key].time < Date.now() - 10000) {
+      const newAbility = await this.createPrincipalAbility(email);
+      ability = newAbility;
+      this.principalAbility[key] = { time: Date.now(), ability: newAbility };
+    }
+    return ability;
+  }
+
+  async createPrincipalAbility(email: string): Promise<MongoAbility<AbilityTuple, MongoQuery>> {
+    const principalWithPermissions = await this.getUser({
+      where: {
+        email: email,
+      },
+    });
+    if (!principalWithPermissions || principalWithPermissions == null) {
+      throw new BadRequestException(`Principal with email ${email} not found.`);
+    }
+    return await this.defineAbility(principalWithPermissions);
+  }
+
+  async defineAbility(
+    principalWithPermissions: UserEntity,
+  ): Promise<MongoAbility<AbilityTuple, MongoQuery>> {
+    const permissions: PermissionEntity[] = principalWithPermissions.role.permissions;
+    const { can, build } = new AbilityBuilder(createMongoAbility);
+    permissions.forEach((permission) => {
+      can(
+        permission.action,
+        permission.subject,
+        permission.fields ?? '*',
+        permission.conditions ? JSON.parse(permission.conditions) : undefined,
+      );
+    });
+    return build();
   }
 }
