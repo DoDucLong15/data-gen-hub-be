@@ -24,6 +24,10 @@ import { RolesGuard } from 'src/auth/guards/role.guard';
 import { RoleService } from './sub-services/role.service';
 import { RoleEnity } from './entities/role.entity';
 import { CreateRoleDto, UpdateRoleDto } from './dtos/role.dto';
+import { RegisterEntity } from './entities/register.entity';
+import { RegisterService } from './sub-services/register.service';
+import { BaseResponse } from 'src/base/types/response.type';
+import { ApproveRegisterDto } from './dtos/register.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -33,6 +37,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly roleService: RoleService,
+    private readonly registerService: RegisterService,
   ) {}
 
   @Post()
@@ -102,5 +107,23 @@ export class UsersController {
   @Roles(RoleTypes.ADMIN)
   async deleteRole(@Param('id') id: string): Promise<boolean> {
     return await this.roleService.deleteRole(id);
+  }
+
+  @Get('registers')
+  @Roles(RoleTypes.ADMIN)
+  async getRegisters(): Promise<RegisterEntity[]> {
+    return await this.registerService.getRegisters();
+  }
+
+  @Post('registers')
+  @Roles(RoleTypes.ADMIN)
+  async approveRegister(@Body() request: ApproveRegisterDto): Promise<BaseResponse> {
+    return await this.registerService.approveRegister(request);
+  }
+
+  @Delete('registers/:id')
+  @Roles(RoleTypes.ADMIN)
+  async rejectRegister(@Param('id') id: string): Promise<BaseResponse> {
+    return await this.registerService.rejectRegister(id);
   }
 }

@@ -81,6 +81,12 @@ export class SystemConfigurationService {
             SystemConfigUtils.adminEmails = jsonValue;
             Logger.verbose(`Updated ADMIN_EMAILS`, 'SystemConfigService');
           }
+        } else if (config.key === Keys.APPROVE_REGISTER_URL) {
+          const stringValue = SCU.getString(config);
+          if (stringValue) {
+            SystemConfigUtils.approveRegisterUrl = stringValue;
+            Logger.verbose(`Updated APPROVE_REGISTER_URL`, 'SystemConfigService');
+          }
         }
       }
     } catch (error) {

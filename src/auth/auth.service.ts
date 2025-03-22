@@ -13,6 +13,7 @@ import { CreateUserDto } from 'src/users/dtos/user.dto';
 import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.util';
 import { TemplateHelper } from 'src/mailer/helpers/template.helper';
 import { BaseResponse } from 'src/base/types/response.type';
+import { RegisterService } from 'src/users/sub-services/register.service';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
+    private readonly registerService: RegisterService,
   ) {}
 
   async signIn(request: SignInDto): Promise<SignInResponse> {
@@ -97,6 +99,13 @@ export class AuthService {
     if (existingUser) {
       throw new BadRequestException('User already exists');
     }
+    const existingRegister = await this.registerService.getRegister({
+      where: { email: request.email },
+    });
+    if (existingRegister) {
+      throw new BadRequestException('Register already exists');
+    }
+    await this.registerService.createRegister(request);
     if (SystemConfigUtils.adminEmails.length === 0) {
       Logger.warn('No admin emails found', 'AuthService');
     } else {
