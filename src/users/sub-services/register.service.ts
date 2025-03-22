@@ -4,12 +4,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
 import { CreateUserDto } from '../dtos/user.dto';
 import { UsersService } from '../users.service';
-import { RoleService } from './role.service';
 import { ApproveRegisterDto } from '../dtos/register.dto';
 import { BaseResponse } from 'src/base/types/response.type';
 import { MailerService } from 'src/mailer/mailer.service';
 import { TemplateHelper } from 'src/mailer/helpers/template.helper';
-import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.util';
+import { RolesService } from 'src/roles/roles.service';
 
 @Injectable()
 export class RegisterService {
@@ -17,7 +16,7 @@ export class RegisterService {
     @InjectRepository(RegisterEntity)
     private readonly registerRepository: Repository<RegisterEntity>,
     private readonly usersService: UsersService,
-    private readonly roleService: RoleService,
+    private readonly roleService: RolesService,
     private readonly mailerService: MailerService,
   ) {}
 

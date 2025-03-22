@@ -1,7 +1,6 @@
 import { AbstractAuditingEntity } from '../../base/entities/abstract-auditing-entity';
 import { Column, Entity, OneToMany } from 'typeorm';
-import { UserEntity } from './user.entity';
-import { RoleTypes } from '../enums/role-types.enum';
+import { UserEntity } from '../../users/entities/user.entity';
 
 @Entity('roles')
 export class RoleEnity extends AbstractAuditingEntity {

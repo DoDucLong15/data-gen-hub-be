@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
 import { CreateUserDto, UpdateUserDto } from './dtos/user.dto';
-import { RoleService } from './sub-services/role.service';
+import { RolesService } from 'src/roles/roles.service';
 import { MapperUserResponse } from './helpers/mapper.helper';
 import { UserResponse } from './types/user-response.type';
 import { MailerService } from 'src/mailer/mailer.service';
@@ -17,7 +17,7 @@ export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
-    private readonly roleService: RoleService,
+    private readonly roleService: RolesService,
     private readonly mailerService: MailerService,
   ) {}
 

@@ -1,15 +1,4 @@
-import {
-  Body,
-  ClassSerializerInterceptor,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateUserDto, UpdateUserDto } from './dtos/user.dto';
@@ -21,9 +10,6 @@ import { UserPayload } from 'src/auth/types/user-playload.type';
 import { Roles } from 'src/auth/decorators/role.decorator';
 import { RoleTypes } from './enums/role-types.enum';
 import { RolesGuard } from 'src/auth/guards/role.guard';
-import { RoleService } from './sub-services/role.service';
-import { RoleEnity } from './entities/role.entity';
-import { CreateRoleDto, UpdateRoleDto } from './dtos/role.dto';
 import { RegisterEntity } from './entities/register.entity';
 import { RegisterService } from './sub-services/register.service';
 import { BaseResponse } from 'src/base/types/response.type';
@@ -36,7 +22,6 @@ import { ApproveRegisterDto } from './dtos/register.dto';
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
-    private readonly roleService: RoleService,
     private readonly registerService: RegisterService,
   ) {}
 
@@ -82,31 +67,6 @@ export class UsersController {
   @Roles(RoleTypes.ADMIN)
   async deleteUser(@Param('id') id: string): Promise<boolean> {
     return await this.usersService.deleteUser(id);
-  }
-
-  @Get('role')
-  @Roles(RoleTypes.ADMIN)
-  @UseInterceptors(ClassSerializerInterceptor)
-  async getRoles(): Promise<RoleEnity[]> {
-    return await this.roleService.getRoles();
-  }
-
-  @Post('role')
-  @Roles(RoleTypes.ADMIN)
-  async createRole(@Body() request: CreateRoleDto): Promise<RoleEnity> {
-    return await this.roleService.createRole(request);
-  }
-
-  @Patch('role')
-  @Roles(RoleTypes.ADMIN)
-  async updateRole(@Body() request: UpdateRoleDto): Promise<RoleEnity> {
-    return await this.roleService.updateRole(request);
-  }
-
-  @Delete('role/:id')
-  @Roles(RoleTypes.ADMIN)
-  async deleteRole(@Param('id') id: string): Promise<boolean> {
-    return await this.roleService.deleteRole(id);
   }
 
   @Get('registers')

@@ -1,8 +1,7 @@
 import { AbstractAuditingEntity } from '../../base/entities/abstract-auditing-entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
-import { RoleEnity } from './role.entity';
+import { RoleEnity } from '../../roles/entities/role.entity';
 import { Exclude, Expose } from 'class-transformer';
-import { RoleTypes } from '../enums/role-types.enum';
 import { ClassEntity } from '../../class/entities/class.entity';
 
 @Entity('users')

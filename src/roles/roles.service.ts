@@ -1,12 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
-import { RoleEnity } from '../entities/role.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { RoleTypes } from '../enums/role-types.enum';
-import { CreateRoleDto, UpdateRoleDto } from '../dtos/role.dto';
+import { RoleEnity } from './entities/role.entity';
+import { FindManyOptions, Repository } from 'typeorm';
+import { UpdateRoleDto } from './dtos/role.dto';
+import { CreateRoleDto } from './dtos/role.dto';
 
 @Injectable()
-export class RoleService {
+export class RolesService {
   constructor(
     @InjectRepository(RoleEnity)
     private readonly roleRepository: Repository<RoleEnity>,
@@ -22,8 +22,8 @@ export class RoleService {
     return role;
   }
 
-  async getRoles(): Promise<RoleEnity[]> {
-    return await this.roleRepository.find();
+  async getRoles(options?: FindManyOptions<RoleEnity> | undefined): Promise<RoleEnity[]> {
+    return await this.roleRepository.find(options);
   }
 
   async getRoleById(id: string): Promise<RoleEnity> {
