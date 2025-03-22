@@ -26,6 +26,14 @@ export class RoleService {
     return await this.roleRepository.find();
   }
 
+  async getRoleById(id: string): Promise<RoleEnity> {
+    const role = await this.roleRepository.findOne({
+      where: { id },
+    });
+    if (!role) throw new BadRequestException('Role not found');
+    return role;
+  }
+
   async createRole(request: CreateRoleDto): Promise<RoleEnity> {
     const role = await this.roleRepository.findOne({
       where: { name: request.name },
