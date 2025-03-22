@@ -11,4 +11,8 @@ export type UserResponse = {
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date;
+  permissions?: {
+    action: string;
+    subject: string;
+  }[];
 };

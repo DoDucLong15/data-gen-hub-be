@@ -22,10 +22,10 @@ export class CreatePermissionDto {
   @IsOptional()
   @IsArray()
   @ArrayNotEmpty()
-  fields: string[];
+  fields?: string[];
 
   @IsOptional()
-  conditions: any;
+  conditions?: any;
 }
 
 export class UpdatePermissionDto extends PartialType(CreatePermissionDto) {
