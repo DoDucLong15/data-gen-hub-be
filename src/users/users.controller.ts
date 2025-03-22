@@ -68,6 +68,7 @@ export class UsersController {
     return await this.usersService
       .getUsers({
         order: { createdAt: 'DESC' },
+        withDeleted: true,
       })
       .then((users) => users.map(MapperUserResponse));
   }

@@ -9,4 +9,5 @@ export type UserResponse = {
   role: string;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date;
 };

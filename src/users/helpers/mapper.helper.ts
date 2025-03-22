@@ -13,5 +13,6 @@ export const MapperUserResponse = (user: UserEntity): UserResponse => {
     role: user.roleName,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
+    deletedAt: user.deletedAt,
   };
 };

@@ -92,6 +92,7 @@ export class AuthService {
   async register(request: CreateUserDto): Promise<BaseResponse> {
     const existingUser = await this.usersService.getUser({
       where: { email: request.email },
+      withDeleted: true,
     });
     if (existingUser) {
       throw new BadRequestException('User already exists');
