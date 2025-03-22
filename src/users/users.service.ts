@@ -28,7 +28,7 @@ export class UsersService {
     if (existingUser) {
       throw new BadRequestException(`User ${dto.email} already exists`);
     }
-    const role = await this.roleService.findRoleByName(dto.role);
+    const role = await this.roleService.getRoleById(dto.roleId);
     const newUser = await this.userRepository.save({
       ...dto,
       role: role,

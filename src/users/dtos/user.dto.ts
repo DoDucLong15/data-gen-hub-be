@@ -30,7 +30,7 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsString()
-  role: string = RoleTypes.TEACHER;
+  roleId: string;
 }
 
 export class UpdateUserDto {

@@ -70,7 +70,7 @@ export class RegisterService {
     await this.registerRepository.delete(request.id);
     await this.usersService.createUser({
       ...register,
-      role: role.name,
+      roleId: role.id,
     });
     this.mailerService
       .sendEmail({
