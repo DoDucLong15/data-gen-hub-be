@@ -1,6 +1,8 @@
-FROM node:18 as development
+FROM node:20
 
 EXPOSE 8080
+
+ENV NODE_ENV=development
 
 # Create app directory
 WORKDIR /usr/src/app
@@ -11,11 +13,12 @@ COPY package*.json ./
 # Install app dependencies
 RUN npm install --legacy-peer-deps
 
+# Cài đặt Docker CLI trong container NestJS
+RUN apt-get update && apt-get install -y docker.io
+
 # Bundle app source
 COPY . .
 
 RUN npm run build
-
-ENV NODE_ENV development
 
 CMD [ "node", "dist/src/main.js" ]

@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { spawn } from 'child_process';
+import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import * as path from 'path';
 import * as os from 'os';
 
 @Injectable()
 export class PythonScriptService {
-  private pythonCommand = process.env.PYTHON_PATH || 'python';
   private environment = process.env.NODE_ENV ?? 'local';
+  private pythonContainer = process.env.PYTHON_CONTAINER ?? 'python-service';
   constructor() {}
 
   async runPythonScript(scriptPath: string, args?: string[]): Promise<string> {
@@ -16,34 +16,54 @@ export class PythonScriptService {
         os.platform() === 'win32'
           ? path.resolve('../python-script/.venv/Scripts/python.exe')
           : path.resolve('../python-script/.venv/bin/python');
-      // Chạy Python script
-      const process = spawn(this.environment === 'local' ? venvPath : this.pythonCommand, [
-        fullPath,
-        ...(args || []),
-      ]);
+
+      let process: ChildProcessWithoutNullStreams;
+
+      try {
+        if (this.environment === 'local') {
+          process = spawn(venvPath, [fullPath, ...(args || [])]);
+        } else {
+          process = spawn('docker', [
+            'exec',
+            '-i',
+            this.pythonContainer,
+            'python3',
+            fullPath,
+            ...(args || []),
+          ]);
+        }
+      } catch (error) {
+        Logger.error(`Failed to start process: ${error.message}`, 'PythonScriptService');
+        reject(new Error(`Failed to start process: ${error.message}`));
+        return;
+      }
+
       Logger.log(
         `Running python script: ${process.spawnargs.join(' ')}`,
         'PythonScriptService.runPythonScript',
       );
+
       let output = '';
       let error = '';
 
-      // Lấy output từ Python script
       process.stdout.on('data', (data) => {
         output += data.toString();
       });
 
-      // Lấy lỗi nếu có
       process.stderr.on('data', (data) => {
         error += data.toString();
       });
 
-      // Xử lý khi tiến trình kết thúc
+      process.on('error', (err) => {
+        Logger.error(`Process error: ${err.message}`, 'PythonScriptService');
+        reject(new Error(`Process error: ${err.message}`));
+      });
+
       process.on('close', (code) => {
         if (code === 0) {
           resolve(output.trim());
         } else {
-          console.log(output);
+          Logger.error(`Python script exited with code ${code}: ${error}`, 'PythonScriptService');
           reject(new Error(error || `Python script exited with code ${code}`));
         }
       });

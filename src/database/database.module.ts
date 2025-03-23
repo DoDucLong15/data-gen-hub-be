@@ -22,7 +22,7 @@ const environment = process.env.NODE_ENV ?? 'local';
           database: configService.get('database.db'),
           ssl: false,
           autoLoadEntities: true,
-          synchronize: false,
+          synchronize: environment === 'development' ? true : false,
         };
         return result;
       },

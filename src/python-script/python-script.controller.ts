@@ -8,21 +8,27 @@ import { EAction } from 'src/permissions/enums/action.enum';
 import { CheckPolicies } from 'src/authorization/decorators/check-policies.decorator';
 
 @ApiTags('Python Script')
+@ApiBearerAuth()
 @Controller('python-script')
 @UseGuards(AccessTokenGuard, PoliciesGuard)
 export class PythonScriptController {
+  private environment = process.env.NODE_ENV ?? 'local';
   constructor(private readonly pythonScriptService: PythonScriptService) {}
 
   @Get('test')
   async testPythonScript() {
-    const data = await this.pythonScriptService.runPythonScript('../python-script/main.py');
+    const data = await this.pythonScriptService.runPythonScript(
+      this.environment === 'local' ? '../python-script/main.py' : '/app/main.py',
+    );
     return JSON.parse(data);
   }
 
   @Get('db-gen-spec')
   @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.PythonScript_DBGenSpec })
   async generateSpec() {
-    const data = await this.pythonScriptService.runPythonScript('../python-script/dbgenspec.py');
+    const data = await this.pythonScriptService.runPythonScript(
+      this.environment === 'local' ? '../python-script/dbgenspec.py' : '/app/dbgenspec.py',
+    );
     return JSON.parse(data);
   }
 }
