@@ -6,10 +6,18 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AccessTokenStrategy } from './strategies/access-token.strategy';
 import { MailerModule } from 'src/mailer/mailer.module';
+import { SystemConfigurationModule } from 'src/system-configuration/system-configuration.module';
 
 @Module({
-  imports: [JwtModule.register({}), UsersModule, PassportModule, MailerModule],
+  imports: [
+    JwtModule.register({}),
+    UsersModule,
+    PassportModule,
+    MailerModule,
+    SystemConfigurationModule,
+  ],
   controllers: [AuthController],
   providers: [AuthService, AccessTokenStrategy],
+  exports: [AuthService],
 })
 export class AuthModule {}

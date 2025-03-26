@@ -24,6 +24,8 @@ import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { AuthorizationModule } from './authorization/authorization.module';
 import { MockModule } from './mock/mock.module';
+import { OnedriveModule } from './onedrive/onedrive.module';
+import { CronManagementModule } from './cron-management/cron-management.module';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -62,6 +64,8 @@ const environment = process.env.NODE_ENV ?? 'local';
     PermissionsModule,
     AuthorizationModule,
     MockModule,
+    OnedriveModule,
+    CronManagementModule,
   ],
   controllers: [AppController],
   providers: [AppService],
