@@ -3,6 +3,7 @@ export enum ESubject {
   System_Roles = 'system.roles',
   System_Permissions = 'system.permissions',
   System_Configuration = 'system.configuration',
+  System_CronManagement = 'system.cronManagement',
 
   Classes = 'classes',
   Students = 'students',
@@ -17,4 +18,6 @@ export enum ESubject {
   PythonScript_DBGenSpec = 'pythonScript.dbGenSpec',
 
   Storage = 'storage',
+
+  Onedrive = 'onedrive',
 }

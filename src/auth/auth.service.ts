@@ -14,6 +14,8 @@ import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.
 import { TemplateHelper } from 'src/mailer/helpers/template.helper';
 import { BaseResponse } from 'src/base/types/response.type';
 import { RegisterService } from 'src/users/sub-services/register.service';
+import { SystemConfigurationService } from 'src/system-configuration/system-configuration.service';
+import { OnedriveService } from 'src/onedrive/onedrive.service';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +25,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
     private readonly registerService: RegisterService,
+    private readonly onedriveService: OnedriveService,
   ) {}
 
   async signIn(request: SignInDto): Promise<SignInResponse> {
@@ -122,6 +125,49 @@ export class AuthService {
     return {
       status: 'success',
       message: 'User registered successfully',
+    };
+  }
+
+  getOnedriveAuthUrl() {
+    const url = new URL(
+      `https://login.microsoftonline.com/${process.env.ONEDRIVE_TENANT_ID}/oauth2/v2.0/authorize`,
+    );
+    url.searchParams.append('client_id', process.env.ONEDRIVE_CLIENT_ID || '');
+    url.searchParams.append('response_type', 'code');
+    url.searchParams.append('redirect_uri', process.env.ONEDRIVE_REDIRECT_URI || '');
+    url.searchParams.append('scope', 'User.Read Files.ReadWrite.All offline_access');
+    url.searchParams.append('response_mode', 'query');
+
+    return url.toString();
+  }
+
+  async processOnedriveCallback(authCode: string): Promise<any> {
+    const url = `https://login.microsoftonline.com/${process.env.ONEDRIVE_TENANT_ID}/oauth2/v2.0/token`;
+    const data = new URLSearchParams({
+      client_id: process.env.ONEDRIVE_CLIENT_ID || '',
+      client_secret: process.env.ONEDRIVE_CLIENT_SECRET || '',
+      redirect_uri: process.env.ONEDRIVE_REDIRECT_URI || '',
+      grant_type: 'authorization_code',
+      code: authCode,
+    });
+
+    const response = await axios.post(url, data.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+
+    const fetchData = response.data;
+    const accessToken = fetchData.access_token;
+    const refreshToken = fetchData.refresh_token;
+    const expiresIn = fetchData.expires_in;
+    await this.onedriveService.updateOnedriveAccessToken({
+      accessToken,
+      refreshToken,
+      expiresIn,
+    });
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_in: expiresIn,
     };
   }
 }
