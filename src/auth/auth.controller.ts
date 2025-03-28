@@ -46,9 +46,4 @@ export class AuthController {
       return res.status(500).json({ error: 'Failed to get access token' });
     }
   }
-
-  @Post('onedrive/health-check')
-  async healthCheckOnedrive() {
-    return await this.authService.healthCheckOnedrive();
-  }
 }

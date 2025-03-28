@@ -1,19 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule';
-import { AuthService } from 'src/auth/auth.service';
 import { CronJob } from 'cron';
+import { OnedriveService } from 'src/onedrive/onedrive.service';
 
 @Injectable()
 export class CronManagementService {
   constructor(
-    private readonly authService: AuthService,
     private readonly schedulerRegistry: SchedulerRegistry,
+    private readonly onedriveService: OnedriveService,
   ) {}
 
   @Cron(CronExpression.EVERY_30_MINUTES)
   async refreshOnedriveAccessToken() {
     Logger.verbose('Health check onedrive access token', `CronManagementService`);
-    await this.authService.healthCheckOnedrive().catch((error) => {
+    await this.onedriveService.healthCheckOnedrive().catch((error) => {
       Logger.error('Health check onedrive access token failed', error, `CronManagementService`);
     });
     Logger.verbose('Health check onedrive access token completed', `CronManagementService`);

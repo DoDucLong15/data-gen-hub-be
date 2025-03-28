@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { CronManagementService } from './cron-management.service';
 import { CronManagementController } from './cron-management.controller';
-import { AuthModule } from 'src/auth/auth.module';
 import { UsersModule } from 'src/users/users.module';
+import { OnedriveModule } from 'src/onedrive/onedrive.module';
 
 @Module({
-  imports: [AuthModule, UsersModule],
+  imports: [OnedriveModule, UsersModule],
   controllers: [CronManagementController],
   providers: [CronManagementService],
 })

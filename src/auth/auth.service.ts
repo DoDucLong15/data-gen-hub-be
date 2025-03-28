@@ -15,7 +15,7 @@ import { TemplateHelper } from 'src/mailer/helpers/template.helper';
 import { BaseResponse } from 'src/base/types/response.type';
 import { RegisterService } from 'src/users/sub-services/register.service';
 import { SystemConfigurationService } from 'src/system-configuration/system-configuration.service';
-import { DATA_CONNECTOR_ONEDRIVE } from './constants/data-connector.const';
+import { OnedriveService } from 'src/onedrive/onedrive.service';
 
 @Injectable()
 export class AuthService {
@@ -25,7 +25,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
     private readonly registerService: RegisterService,
-    private readonly systemConfigService: SystemConfigurationService,
+    private readonly onedriveService: OnedriveService,
   ) {}
 
   async signIn(request: SignInDto): Promise<SignInResponse> {
@@ -128,23 +128,6 @@ export class AuthService {
     };
   }
 
-  async updateOnedriveAccessToken(data: {
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
-  }) {
-    const dataConnector = await this.systemConfigService.get(DATA_CONNECTOR_ONEDRIVE);
-    if (dataConnector) {
-      dataConnector.jsonValue = data;
-      await this.systemConfigService.update(dataConnector);
-    } else {
-      await this.systemConfigService.create({
-        key: DATA_CONNECTOR_ONEDRIVE,
-        jsonValue: data,
-      });
-    }
-  }
-
   getOnedriveAuthUrl() {
     const url = new URL(
       `https://login.microsoftonline.com/${process.env.ONEDRIVE_TENANT_ID}/oauth2/v2.0/authorize`,
@@ -176,7 +159,7 @@ export class AuthService {
     const accessToken = fetchData.access_token;
     const refreshToken = fetchData.refresh_token;
     const expiresIn = fetchData.expires_in;
-    await this.updateOnedriveAccessToken({
+    await this.onedriveService.updateOnedriveAccessToken({
       accessToken,
       refreshToken,
       expiresIn,
@@ -184,65 +167,6 @@ export class AuthService {
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
-      expires_in: expiresIn,
-    };
-  }
-
-  async healthCheckOnedrive() {
-    const dataConnector = await this.systemConfigService.get(DATA_CONNECTOR_ONEDRIVE);
-    if (!dataConnector) {
-      Logger.warn('No onedrive data connector found', 'AuthService');
-      return;
-    }
-    try {
-      const url = `https://graph.microsoft.com/v1.0/me/drive/root/children`;
-      await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${dataConnector.jsonValue.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      Logger.verbose('Onedrive access token is valid', 'AuthService');
-      return {
-        status: 'success',
-        message: 'Onedrive access token is valid',
-      };
-    } catch (error) {
-      Logger.error(error, 'AuthService.healthCheckOnedrive');
-      await this.refreshOnedriveAccessToken(dataConnector.jsonValue.refreshToken);
-      return {
-        status: 'success',
-        message: 'Onedrive access token is refreshed',
-      };
-    }
-  }
-
-  // Health check
-  async refreshOnedriveAccessToken(refreshToken: string) {
-    const url = `https://login.microsoftonline.com/${process.env.ONEDRIVE_TENANT_ID}/oauth2/v2.0/token`;
-    const data = new URLSearchParams({
-      client_id: process.env.ONEDRIVE_CLIENT_ID || '',
-      client_secret: process.env.ONEDRIVE_CLIENT_SECRET || '',
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken,
-    });
-
-    const response = await axios.post(url, data.toString(), {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
-
-    const fetchData = response.data;
-    const accessToken = fetchData.access_token;
-    const newRefreshToken = fetchData.refresh_token;
-    const expiresIn = fetchData.expires_in;
-    await this.updateOnedriveAccessToken({
-      accessToken,
-      refreshToken: newRefreshToken,
-      expiresIn,
-    });
-    return {
-      access_token: accessToken,
-      refresh_token: newRefreshToken,
       expires_in: expiresIn,
     };
   }

@@ -8,5 +8,6 @@ import { UsersModule } from 'src/users/users.module';
   imports: [SystemConfigurationModule, UsersModule],
   controllers: [OnedriveController],
   providers: [OnedriveService],
+  exports: [OnedriveService],
 })
 export class OnedriveModule {}
