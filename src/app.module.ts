@@ -26,6 +26,7 @@ import { AuthorizationModule } from './authorization/authorization.module';
 import { MockModule } from './mock/mock.module';
 import { OnedriveModule } from './onedrive/onedrive.module';
 import { CronManagementModule } from './cron-management/cron-management.module';
+import { DriveApisModule } from './drive-apis/drive-apis.module';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -66,6 +67,7 @@ const environment = process.env.NODE_ENV ?? 'local';
     MockModule,
     OnedriveModule,
     CronManagementModule,
+    DriveApisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

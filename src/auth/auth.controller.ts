@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Logger, Post, Query, Redirect, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Logger,
+  Post,
+  Query,
+  Redirect,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RefreshTokenRequest, SignInDto } from './dtos/sign-in.dto';
 import { SignInResponse } from './types/signin-response.type';
@@ -6,6 +17,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { CreateUserDto } from 'src/users/dtos/user.dto';
 import { BaseResponse } from 'src/base/types/response.type';
 import { Response } from 'express';
+import { GoogleDriveGuard } from './guards/google.guard';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -45,5 +57,11 @@ export class AuthController {
     } catch (error) {
       return res.status(500).json({ error: 'Failed to get access token' });
     }
+  }
+
+  @Get('google/drive')
+  @UseGuards(GoogleDriveGuard)
+  authGoogleDrive(): number {
+    return HttpStatus.OK;
   }
 }
