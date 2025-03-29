@@ -230,6 +230,23 @@ export class DriveApisService {
     }
   }
 
+  // Download multiple files
+  async downloadFiles(fileIds: string[]): Promise<
+    {
+      buffer: Buffer;
+      fileName: string;
+      mimeType: string;
+      fileSize: number;
+    }[]
+  > {
+    return await Promise.all(
+      fileIds.map(async (fileId) => {
+        const { buffer, fileName, mimeType, fileSize } = await this.downloadFile(fileId);
+        return { buffer, fileName, mimeType, fileSize };
+      }),
+    );
+  }
+
   async downloadFile(fileId: string): Promise<{
     buffer: Buffer;
     fileName: string;

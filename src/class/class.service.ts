@@ -8,6 +8,7 @@ import { UserPayload } from 'src/auth/types/user-playload.type';
 import { TemplateSpecificationService } from 'src/template-specification/template-specification.service';
 import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.util';
 import { TemplateSpecificationEntity } from 'src/template-specification/entities/template-specification.entity';
+import { ClassDriveInfoService } from './sub-services/class-drive-info.service';
 
 @Injectable()
 export class ClassService {
@@ -16,6 +17,7 @@ export class ClassService {
     private readonly repository: Repository<ClassEntity>,
     private readonly usersService: UsersService,
     private readonly templateSpecificationService: TemplateSpecificationService,
+    private readonly classDriveInfoService: ClassDriveInfoService,
   ) {}
 
   async create(request: CreateClassDto, user: UserPayload): Promise<ClassEntity> {
@@ -48,6 +50,11 @@ export class ClassService {
         )
         .catch((error) => Logger.error(error, 'ClassService.create'));
     }
+    if (request.driveId) {
+      this.classDriveInfoService.create(newClass.id, request.driveId).catch((error) => {
+        Logger.error(error, 'ClassService.create');
+      });
+    }
     return newClass;
   }
 
@@ -63,6 +70,11 @@ export class ClassService {
     const _class = await this.getOne({ where: { id: request.id, teacher: { email: user.email } } });
     if (!_class) {
       throw new BadRequestException(`Class with id ${request.id} not found`);
+    }
+    if (request.driveId && _class.driveId !== request.driveId) {
+      this.classDriveInfoService.create(_class.id, request.driveId).catch((error) => {
+        Logger.error(error, 'ClassService.update');
+      });
     }
     return await this.repository.save({
       ..._class,

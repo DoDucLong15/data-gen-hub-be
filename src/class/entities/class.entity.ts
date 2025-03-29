@@ -1,11 +1,12 @@
 import { UserEntity } from '../../users/entities/user.entity';
 import { AbstractAuditingEntity } from '../../base/entities/abstract-auditing-entity';
-import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany, OneToOne } from 'typeorm';
 import { TemplateSpecificationEntity } from '../../template-specification/entities/template-specification.entity';
 import { StudentEntity } from '../../students/entities/student.entity';
 import { AssignmentSheetsEntity } from '../../thesis-management/entities/assignment-sheet.entity';
 import { GuidanceReviewEntity } from '../../thesis-management/entities/guidance-review.entity';
 import { SupervisoryCommentsEntity } from '../../thesis-management/entities/supervisory-comments.entity';
+import { ClassDriveInfoEntity } from './drive-info.entity';
 
 @Entity('classes')
 export class ClassEntity extends AbstractAuditingEntity {
@@ -60,4 +61,12 @@ export class ClassEntity extends AbstractAuditingEntity {
     cascade: true,
   })
   supervisoryComments: SupervisoryCommentsEntity[];
+
+  @OneToOne(() => ClassDriveInfoEntity, (driveInfo) => driveInfo.class, {
+    cascade: true,
+  })
+  driveInfo: ClassDriveInfoEntity;
+
+  @Column({ type: 'varchar', name: 'drive_id', nullable: true })
+  driveId: string;
 }
