@@ -68,5 +68,5 @@ export class ClassEntity extends AbstractAuditingEntity {
   driveInfo: ClassDriveInfoEntity;
 
   @Column({ type: 'varchar', name: 'drive_id', nullable: true })
-  driveId: string;
+  driveId: string | null;
 }

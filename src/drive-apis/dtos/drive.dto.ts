@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   ArrayNotEmpty,
@@ -29,6 +30,9 @@ export class UploadFilesDto {
   @IsNotEmpty()
   @IsString()
   folderId: string;
+
+  @ApiProperty({ type: 'array', items: { type: 'string', format: 'binary' }, required: true })
+  files: any[];
 }
 
 export class CreateFolderDto {

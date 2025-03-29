@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClassDriveInfoEntity } from '../entities/drive-info.entity';
 import { Repository } from 'typeorm';
@@ -6,9 +6,10 @@ import { DownloadFileFromDriveDto, SaveClassDriveInfoDto } from '../dtos/class.d
 import { BaseResponse } from 'src/base/types/response.type';
 import { DriveApisService } from 'src/drive-apis/drive-apis.service';
 import { TClassDriveItem } from '../types/class-drive.type';
-import { DriveItem } from 'src/drive-apis/types/drive-config.type';
-import { Response } from 'express';
+import { DriveItem, UploadFilesResponse } from 'src/drive-apis/types/drive-config.type';
+import e, { Response } from 'express';
 import { FOLDER_MIMETYPE } from 'src/drive-apis/constants/drive.constant';
+import { UserPayload } from 'src/auth/types/user-playload.type';
 const archiver = require('archiver');
 
 @Injectable()
@@ -27,18 +28,20 @@ export class ClassDriveInfoService {
         },
       },
     });
-    if (existing) {
-      throw new BadRequestException('Class drive info already exists');
-    }
     const folder = await this.driveApiService.getFile(driveId);
-    const newEntity = {
-      driveId,
-      studentList: {} as TClassDriveItem,
-      assignmentSheets: {} as TClassDriveItem,
-      guidanceReviews: {} as TClassDriveItem,
-      supervisoryComments: {} as TClassDriveItem,
-      classId,
-    } as ClassDriveInfoEntity;
+    const newEntity = existing
+      ? {
+          ...existing,
+          driveId,
+        }
+      : ({
+          driveId,
+          studentList: {} as TClassDriveItem,
+          assignmentSheets: {} as TClassDriveItem,
+          guidanceReviews: {} as TClassDriveItem,
+          supervisoryComments: {} as TClassDriveItem,
+          classId,
+        } as ClassDriveInfoEntity);
 
     // Create folder student list
     const studentListFolder = await this.driveApiService.createFolder('Student List', folder.id);
@@ -161,29 +164,77 @@ export class ClassDriveInfoService {
     };
   }
 
-  async getByClassId(classId: string): Promise<DriveItem[]> {
+  async getByClassId(classId: string, user: UserPayload): Promise<DriveItem> {
     const existings = await this.classDriveInfoRepository.findOne({
       where: {
         class: {
           id: classId,
+          teacher: {
+            email: user.email,
+          },
         },
       },
     });
     if (!existings) {
-      return [];
+      return {} as DriveItem;
     }
-    return await this.driveApiService.listFiles({
-      driveIds: [existings.driveId],
-      deps: 2,
-    });
+    const root = await this.driveApiService.getFile(existings.driveId);
+    return {
+      ...root,
+      children: await this.driveApiService.listFiles({
+        driveIds: [existings.driveId],
+        deps: 2,
+      }),
+    };
   }
 
-  async downloadFile(classId: string, request: DownloadFileFromDriveDto, res: Response) {
+  private async getFileIdsHasPermission(
+    driveId: string,
+    excludeFolder: boolean = true,
+  ): Promise<string[]> {
+    try {
+      const files = await this.driveApiService.listFiles({
+        driveIds: [driveId],
+        deps: 2,
+      });
+      const getAllFileIds = (file: DriveItem): string[] => {
+        const ids = !excludeFolder ? [file.id] : file.mimeType !== FOLDER_MIMETYPE ? [file.id] : [];
+        if (file.children && file.children.length > 0) {
+          file.children.forEach((child) => {
+            ids.push(...getAllFileIds(child));
+          });
+        }
+        return ids;
+      };
+
+      const allIds = files.reduce((acc: string[], file) => {
+        return [...acc, ...getAllFileIds(file)];
+      }, []);
+
+      return allIds;
+    } catch (error) {
+      Logger.error(
+        `Error getting file IDs with permission: ${error.message}`,
+        'ClassDriveInfoService.getFileIdsHasPermission',
+      );
+      return [];
+    }
+  }
+
+  async downloadFile(
+    classId: string,
+    request: DownloadFileFromDriveDto,
+    res: Response,
+    user: UserPayload,
+  ) {
     try {
       const existing = await this.classDriveInfoRepository.findOne({
         where: {
           class: {
             id: classId,
+            teacher: {
+              email: user.email,
+            },
           },
         },
       });
@@ -193,28 +244,7 @@ export class ClassDriveInfoService {
           message: 'Class drive info not found',
         });
       }
-      const fileIdsHasPermission = await this.driveApiService
-        .listFiles({
-          driveIds: [existing.driveId],
-          deps: 2,
-        })
-        .then((files) => {
-          const getAllFileIds = (file: DriveItem): string[] => {
-            const ids = file.mimeType !== FOLDER_MIMETYPE ? [file.id] : [];
-            if (file.children && file.children.length > 0) {
-              file.children.forEach((child) => {
-                ids.push(...getAllFileIds(child));
-              });
-            }
-            return ids;
-          };
-
-          const allIds = files.reduce((acc: string[], file) => {
-            return [...acc, ...getAllFileIds(file)];
-          }, []);
-
-          return allIds;
-        });
+      const fileIdsHasPermission = await this.getFileIdsHasPermission(existing.driveId);
       // Filter fileIds
       const fileIds = request.fileIds.filter((fileId) => {
         return fileIdsHasPermission.includes(fileId);
@@ -241,6 +271,93 @@ export class ClassDriveInfoService {
         status: 'error',
         message: error.message,
       });
+    }
+  }
+
+  async uploadFiles(
+    classId: string,
+    files: Express.Multer.File[],
+    folderId: string,
+    user: UserPayload,
+  ): Promise<UploadFilesResponse> {
+    try {
+      const existing = await this.classDriveInfoRepository.findOne({
+        where: {
+          class: {
+            id: classId,
+            teacher: {
+              email: user.email,
+            },
+          },
+        },
+      });
+      if (!existing) {
+        throw new BadRequestException('Class drive info not found');
+      }
+      const fileIdsHasPermission = await this.getFileIdsHasPermission(existing.driveId, false);
+      if (!fileIdsHasPermission.includes(folderId)) {
+        throw new BadRequestException('You do not have permission to upload files to this folder');
+      }
+      return await this.driveApiService.uploadFiles(files, folderId);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async deleteFile(classId: string, fileId: string, user: UserPayload): Promise<boolean> {
+    try {
+      const existing = await this.classDriveInfoRepository.findOne({
+        where: {
+          class: {
+            id: classId,
+            teacher: {
+              email: user.email,
+            },
+          },
+        },
+      });
+      if (!existing) {
+        throw new BadRequestException('Class drive info not found');
+      }
+      const fileIdsHasPermission = await this.getFileIdsHasPermission(existing.driveId, false);
+      if (!fileIdsHasPermission.includes(fileId)) {
+        throw new BadRequestException('You do not have permission to delete this file');
+      }
+      return await this.driveApiService.deleteFile(fileId);
+    } catch (error) {
+      Logger.error(`Error deleting file: ${error.message}`, 'ClassDriveInfoService.deleteFile');
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async createFolder(
+    classId: string,
+    folderName: string,
+    parenFolderId: string,
+    user: UserPayload,
+  ) {
+    try {
+      const existing = await this.classDriveInfoRepository.findOne({
+        where: {
+          class: {
+            id: classId,
+            teacher: {
+              email: user.email,
+            },
+          },
+        },
+      });
+      if (!existing) {
+        throw new BadRequestException('Class drive info not found');
+      }
+      const fileIdsHasPermission = await this.getFileIdsHasPermission(existing.driveId, false);
+      if (!fileIdsHasPermission.includes(parenFolderId)) {
+        throw new BadRequestException('You do not have permission to create folder in this folder');
+      }
+      return await this.driveApiService.createFolder(folderName, parenFolderId);
+    } catch (error) {
+      Logger.error(`Error creating folder: ${error.message}`, 'ClassDriveInfoService.createFolder');
+      throw new BadRequestException(error.message);
     }
   }
 }
