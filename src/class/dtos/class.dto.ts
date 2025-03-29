@@ -1,5 +1,14 @@
 import { PartialType } from '@nestjs/swagger';
-import { IsArray, isNotEmpty, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { transformToArray } from 'src/base/transformers/dto.transformer';
 
 export class CreateClassDto {
   @IsNotEmpty()
@@ -21,10 +30,66 @@ export class CreateClassDto {
   @IsOptional()
   @IsArray()
   studentPaths: string[];
+
+  @IsOptional()
+  @IsString()
+  driveId: string;
 }
 
 export class UpdateClassDto extends PartialType(CreateClassDto) {
   @IsNotEmpty()
   @IsString()
   id: string;
+}
+
+export class ClassDriveItemDto {
+  @IsOptional()
+  @IsString()
+  driveId: string;
+
+  @IsOptional()
+  @IsString()
+  folderInputId: string;
+
+  @IsOptional()
+  @IsString()
+  folderOutputId: string;
+}
+
+export class SaveClassDriveInfoDto {
+  @IsNotEmpty()
+  @IsString()
+  classId: string;
+
+  @IsOptional()
+  @IsString()
+  driveId: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ClassDriveItemDto)
+  studentList: ClassDriveItemDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ClassDriveItemDto)
+  assignmentSheets: ClassDriveItemDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ClassDriveItemDto)
+  guidanceReviews: ClassDriveItemDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ClassDriveItemDto)
+  supervisoryComments: ClassDriveItemDto;
+}
+
+export class DownloadFileFromDriveDto {
+  @IsNotEmpty()
+  @IsArray()
+  @ArrayNotEmpty()
+  @Transform(transformToArray)
+  fileIds: string[];
 }

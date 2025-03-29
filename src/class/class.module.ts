@@ -5,15 +5,19 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClassEntity } from './entities/class.entity';
 import { UsersModule } from 'src/users/users.module';
 import { TemplateSpecificationModule } from 'src/template-specification/template-specification.module';
+import { ClassDriveInfoEntity } from './entities/drive-info.entity';
+import { DriveApisModule } from 'src/drive-apis/drive-apis.module';
+import { ClassDriveInfoService } from './sub-services/class-drive-info.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ClassEntity]),
+    TypeOrmModule.forFeature([ClassEntity, ClassDriveInfoEntity]),
     UsersModule,
     forwardRef(() => TemplateSpecificationModule),
+    DriveApisModule,
   ],
   controllers: [ClassController],
-  providers: [ClassService],
+  providers: [ClassService, ClassDriveInfoService],
   exports: [ClassService],
 })
 export class ClassModule {}
