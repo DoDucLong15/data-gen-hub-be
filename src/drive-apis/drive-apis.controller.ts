@@ -10,7 +10,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { DriveApisService } from './drive-apis.service';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
 import { PoliciesGuard } from 'src/authorization/guards/policies.guard';
 import { CheckPolicies } from 'src/authorization/decorators/check-policies.decorator';
@@ -53,6 +53,10 @@ export class DriveApisController {
     }),
   )
   @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.System_DriveApis })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    type: UploadFilesDto,
+  })
   async uploadFiles(
     @Body() body: UploadFilesDto,
     @UploadedFiles() files: Express.Multer.File[],

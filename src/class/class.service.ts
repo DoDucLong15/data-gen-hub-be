@@ -51,8 +51,11 @@ export class ClassService {
         .catch((error) => Logger.error(error, 'ClassService.create'));
     }
     if (request.driveId) {
-      this.classDriveInfoService.create(newClass.id, request.driveId).catch((error) => {
+      this.classDriveInfoService.create(newClass.id, request.driveId).catch(async (error) => {
         Logger.error(error, 'ClassService.create');
+        await this.repository.update(newClass.id, {
+          driveId: null,
+        });
       });
     }
     return newClass;
@@ -72,8 +75,11 @@ export class ClassService {
       throw new BadRequestException(`Class with id ${request.id} not found`);
     }
     if (request.driveId && _class.driveId !== request.driveId) {
-      this.classDriveInfoService.create(_class.id, request.driveId).catch((error) => {
+      this.classDriveInfoService.create(_class.id, request.driveId).catch(async (error) => {
         Logger.error(error, 'ClassService.update');
+        await this.repository.update(_class.id, {
+          driveId: _class.driveId,
+        });
       });
     }
     return await this.repository.save({

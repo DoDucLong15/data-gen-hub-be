@@ -9,11 +9,12 @@ import {
   Post,
   Query,
   Res,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { ClassService } from './class.service';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
 import { CreateClassDto, DownloadFileFromDriveDto, UpdateClassDto } from './dtos/class.dto';
 import { User } from 'src/auth/decorators/user.decorator';
@@ -24,8 +25,10 @@ import { CheckPolicies } from 'src/authorization/decorators/check-policies.decor
 import { EAction } from 'src/permissions/enums/action.enum';
 import { ESubject } from 'src/authorization/enums/subject.enum';
 import { ClassDriveInfoService } from './sub-services/class-drive-info.service';
-import { DriveItem } from 'src/drive-apis/types/drive-config.type';
+import { DriveItem, UploadFilesResponse } from 'src/drive-apis/types/drive-config.type';
 import { Response } from 'express';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { CreateFolderDto, UploadFilesDto } from 'src/drive-apis/dtos/drive.dto';
 
 @ApiTags('Class')
 @ApiBearerAuth()
@@ -70,8 +73,8 @@ export class ClassController {
 
   @Get(':id/drive-info')
   @CheckPolicies({ action: EAction.READ, subject: ESubject.Classes })
-  async getDriveInfo(@Param('id') id: string): Promise<DriveItem[]> {
-    return await this.classDriveInfoService.getByClassId(id);
+  async getDriveInfo(@Param('id') id: string, @User() user: UserPayload): Promise<DriveItem> {
+    return await this.classDriveInfoService.getByClassId(id, user);
   }
 
   @Get(':classId/drive-info/download')
@@ -80,7 +83,55 @@ export class ClassController {
     @Param('classId') classId: string,
     @Query() request: DownloadFileFromDriveDto,
     @Res() res: Response,
+    @User() user: UserPayload,
   ) {
-    return await this.classDriveInfoService.downloadFile(classId, request, res);
+    return await this.classDriveInfoService.downloadFile(classId, request, res, user);
+  }
+
+  @Post(':classId/drive-info/upload')
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10 MB
+      },
+    }),
+  )
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Classes })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    type: UploadFilesDto,
+  })
+  async uploadFiles(
+    @Param('classId') classId: string,
+    @Body() body: UploadFilesDto,
+    @UploadedFiles() files: Express.Multer.File[],
+    @User() user: UserPayload,
+  ): Promise<UploadFilesResponse> {
+    return await this.classDriveInfoService.uploadFiles(classId, files, body.folderId, user);
+  }
+
+  @Delete(':classId/drive-info/:fileId')
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Classes })
+  async deleteFile(
+    @Param('classId') classId: string,
+    @Param('fileId') fileId: string,
+    @User() user: UserPayload,
+  ): Promise<boolean> {
+    return await this.classDriveInfoService.deleteFile(classId, fileId, user);
+  }
+
+  @Post(':classId/drive-info/folders')
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Classes })
+  async createFolder(
+    @Body() body: CreateFolderDto,
+    @Param('classId') classId: string,
+    @User() user: UserPayload,
+  ) {
+    return await this.classDriveInfoService.createFolder(
+      classId,
+      body.folderName,
+      body.parentFolderId,
+      user,
+    );
   }
 }
