@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
+import { DriveApisService } from 'src/drive-apis/drive-apis.service';
 import { OnedriveService } from 'src/onedrive/onedrive.service';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class CronManagementService {
   constructor(
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly onedriveService: OnedriveService,
+    private readonly driveApisService: DriveApisService,
   ) {}
 
   @Cron(CronExpression.EVERY_30_MINUTES)
@@ -17,6 +19,15 @@ export class CronManagementService {
       Logger.error('Health check onedrive access token failed', error, `CronManagementService`);
     });
     Logger.verbose('Health check onedrive access token completed', `CronManagementService`);
+  }
+
+  @Cron(CronExpression.EVERY_12_HOURS)
+  async healthCheckDrive() {
+    Logger.verbose('Health check drive access token', `CronManagementService`);
+    await this.driveApisService.healthCheck().catch((error) => {
+      Logger.error('Health check drive access token failed', error, `CronManagementService`);
+    });
+    Logger.verbose('Health check drive access token completed', `CronManagementService`);
   }
 
   getCronJobs() {

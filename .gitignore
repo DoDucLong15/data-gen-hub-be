@@ -41,6 +41,7 @@ lerna-debug.log*
 
 #config
 firebase.config.json
+drive.config.json
 
 # temp directory
 .temp
