@@ -1,3 +1,5 @@
+import { drive_v3 } from 'googleapis';
+
 export type TDriveConnectorConfig = {
   private_key: string;
   client_email: string;
@@ -31,4 +33,9 @@ export type DriveItem = {
   } | null;
   children?: DriveItem[];
   trashed?: boolean;
+};
+
+export type UploadFilesResponse = {
+  success: drive_v3.Schema$File[];
+  failed: { name: string; mineType: string; error: string }[];
 };

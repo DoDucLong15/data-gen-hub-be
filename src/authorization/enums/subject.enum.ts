@@ -4,6 +4,7 @@ export enum ESubject {
   System_Permissions = 'system.permissions',
   System_Configuration = 'system.configuration',
   System_CronManagement = 'system.cronManagement',
+  System_DriveApis = 'system.driveApis',
 
   Classes = 'classes',
   Students = 'students',

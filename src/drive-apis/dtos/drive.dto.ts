@@ -1,6 +1,15 @@
 import { Transform } from 'class-transformer';
-import { ArrayNotEmpty, IsArray, IsInt, IsOptional, IsString, Min } from 'class-validator';
-import { transformToArray } from 'src/base/transformers/dto.transformer';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
+import { transformToArray, transformToBoolean } from 'src/base/transformers/dto.transformer';
 
 export class ListDriveItemsDto {
   @IsArray()
@@ -14,4 +23,35 @@ export class ListDriveItemsDto {
   @IsInt()
   @Min(-1)
   deps: number = 0;
+}
+
+export class UploadFilesDto {
+  @IsNotEmpty()
+  @IsString()
+  folderId: string;
+}
+
+export class CreateFolderDto {
+  @IsNotEmpty()
+  @IsString()
+  folderName: string;
+
+  @IsNotEmpty()
+  @IsString()
+  parentFolderId: string;
+}
+
+export class CheckFileExistsInParentDto {
+  @IsNotEmpty()
+  @IsString()
+  fileIdentifier: string;
+
+  @IsNotEmpty()
+  @IsString()
+  parentFolderId: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(transformToBoolean)
+  isFileName: boolean;
 }
