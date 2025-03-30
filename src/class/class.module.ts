@@ -9,6 +9,7 @@ import { ClassDriveInfoEntity } from './entities/drive-info.entity';
 import { DriveApisModule } from 'src/drive-apis/drive-apis.module';
 import { ClassDriveInfoService } from './sub-services/class-drive-info.service';
 import { StudentModuleV2 } from 'src/student-v2/student-v2.module';
+import { ProgressModule } from 'src/progress/progress.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { StudentModuleV2 } from 'src/student-v2/student-v2.module';
     forwardRef(() => TemplateSpecificationModule),
     DriveApisModule,
     forwardRef(() => StudentModuleV2),
+    ProgressModule,
   ],
   controllers: [ClassController],
   providers: [ClassService, ClassDriveInfoService],

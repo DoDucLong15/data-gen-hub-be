@@ -21,6 +21,8 @@ import {
   ImportStudentFormDataRequestV2,
 } from 'src/students/dtos/import-data.dto';
 import { ThesisDocumentEnum } from 'src/thesis-management/enums/thesis-document.enum';
+import { ProgressService } from 'src/progress/progress.service';
+import { EProgressType } from 'src/progress/constant/progress.const';
 const archiver = require('archiver');
 
 @Injectable()
@@ -30,6 +32,7 @@ export class ClassDriveInfoService {
     private readonly classDriveInfoRepository: Repository<ClassDriveInfoEntity>,
     private readonly driveApiService: DriveApisService,
     private readonly studentServiceV2: StudentServiceV2,
+    private readonly progressService: ProgressService,
   ) {}
 
   async create(classId: string, driveId: string): Promise<ClassDriveInfoEntity> {
@@ -377,9 +380,22 @@ export class ClassDriveInfoService {
   async syncClassDriveData(
     request?: SyncClassDriveDataRequest,
     user?: UserPayload,
+    generateProcessId?: string,
   ): Promise<BaseResponse> {
+    const processId = generateProcessId ?? ProgressService.generateId('sync-class-drive-data-cron');
+    const errorCollector: Record<string, any> = {};
     try {
       Logger.log('Starting sync class drive data', 'ClassDriveInfoService.SyncClassDriveData');
+
+      await this.progressService.createProgress([
+        {
+          processId,
+          type: EProgressType.DRIVE_DATA,
+          action: 'sync',
+          createBy: user?.email ?? 'system',
+          classId: request?.classIds ? request.classIds[0] : undefined,
+        },
+      ]);
 
       const existings = await this.classDriveInfoRepository.find({
         where: {
@@ -469,6 +485,8 @@ export class ClassDriveInfoService {
         }
       }
 
+      await this.progressService.makeCompleted({ processId }, { error: errorCollector });
+
       return {
         status: 'success',
         message: existings.length
@@ -479,6 +497,13 @@ export class ClassDriveInfoService {
       Logger.error(
         `Error syncing class drive data: ${error.message}`,
         'ClassDriveInfoService.SyncClassDriveData',
+      );
+      errorCollector['unknown'] = error.message;
+      await this.progressService.makeFailed(
+        { processId },
+        {
+          error: errorCollector,
+        },
       );
       return {
         status: 'error',

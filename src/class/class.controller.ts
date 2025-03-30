@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   Patch,
   Post,
@@ -35,6 +36,7 @@ import { Response } from 'express';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { CreateFolderDto, UploadFilesDto } from 'src/drive-apis/dtos/drive.dto';
 import { BaseResponse } from 'src/base/types/response.type';
+import { ProgressService } from 'src/progress/progress.service';
 
 @ApiTags('Class')
 @ApiBearerAuth()
@@ -141,7 +143,7 @@ export class ClassController {
     );
   }
 
-  @Post(':classId/drive-info/sync')
+  @Post('drive-info/sync')
   @ApiBody({
     type: SyncClassDriveDataRequest,
     required: false,
@@ -151,6 +153,18 @@ export class ClassController {
     @Body() request: SyncClassDriveDataRequest,
     @User() user: UserPayload,
   ): Promise<BaseResponse> {
-    return await this.classDriveInfoService.syncClassDriveData(request, user);
+    const generateProcessId = ProgressService.generateId('sync-class-drive-data-manual');
+    this.classDriveInfoService
+      .syncClassDriveData(request, user, generateProcessId)
+      .catch((error) => {
+        Logger.error(error, `${this.constructor.name}.syncDriveInfo`);
+      });
+    return {
+      status: 'processing',
+      message: 'Processing sync class drive data',
+      data: {
+        processId: generateProcessId,
+      },
+    };
   }
 }
