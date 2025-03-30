@@ -2,6 +2,7 @@ import { PartialType } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
   IsArray,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -9,6 +10,7 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { transformToArray } from 'src/base/transformers/dto.transformer';
+import { ESyncDriveDataType } from '../enums/sync-data.type';
 
 export class CreateClassDto {
   @IsNotEmpty()
@@ -92,4 +94,16 @@ export class DownloadFileFromDriveDto {
   @ArrayNotEmpty()
   @Transform(transformToArray)
   fileIds: string[];
+}
+
+export class SyncClassDriveDataRequest {
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  classIds: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsEnum(ESyncDriveDataType, { each: true })
+  types: ESyncDriveDataType[];
 }

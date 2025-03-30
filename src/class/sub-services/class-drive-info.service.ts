@@ -1,8 +1,12 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClassDriveInfoEntity } from '../entities/drive-info.entity';
-import { Repository } from 'typeorm';
-import { DownloadFileFromDriveDto, SaveClassDriveInfoDto } from '../dtos/class.dto';
+import { In, Repository } from 'typeorm';
+import {
+  DownloadFileFromDriveDto,
+  SaveClassDriveInfoDto,
+  SyncClassDriveDataRequest,
+} from '../dtos/class.dto';
 import { BaseResponse } from 'src/base/types/response.type';
 import { DriveApisService } from 'src/drive-apis/drive-apis.service';
 import { TClassDriveItem } from '../types/class-drive.type';
@@ -10,6 +14,13 @@ import { DriveItem, UploadFilesResponse } from 'src/drive-apis/types/drive-confi
 import e, { Response } from 'express';
 import { FOLDER_MIMETYPE } from 'src/drive-apis/constants/drive.constant';
 import { UserPayload } from 'src/auth/types/user-playload.type';
+import { StudentServiceV2 } from 'src/student-v2/student-v2.service';
+import { ESyncDriveDataType } from '../enums/sync-data.type';
+import {
+  ImportListStudentRequest,
+  ImportStudentFormDataRequestV2,
+} from 'src/students/dtos/import-data.dto';
+import { ThesisDocumentEnum } from 'src/thesis-management/enums/thesis-document.enum';
 const archiver = require('archiver');
 
 @Injectable()
@@ -18,6 +29,7 @@ export class ClassDriveInfoService {
     @InjectRepository(ClassDriveInfoEntity)
     private readonly classDriveInfoRepository: Repository<ClassDriveInfoEntity>,
     private readonly driveApiService: DriveApisService,
+    private readonly studentServiceV2: StudentServiceV2,
   ) {}
 
   async create(classId: string, driveId: string): Promise<ClassDriveInfoEntity> {
@@ -358,6 +370,289 @@ export class ClassDriveInfoService {
     } catch (error) {
       Logger.error(`Error creating folder: ${error.message}`, 'ClassDriveInfoService.createFolder');
       throw new BadRequestException(error.message);
+    }
+  }
+
+  // Cron job
+  async syncClassDriveData(
+    request?: SyncClassDriveDataRequest,
+    user?: UserPayload,
+  ): Promise<BaseResponse> {
+    try {
+      Logger.log('Starting sync class drive data', 'ClassDriveInfoService.SyncClassDriveData');
+
+      const existings = await this.classDriveInfoRepository.find({
+        where: {
+          class: {
+            ...(request?.classIds && {
+              id: In(request.classIds),
+            }),
+            ...(user && {
+              teacher: {
+                email: user.email,
+              },
+            }),
+          },
+        },
+        relations: {
+          class: {
+            teacher: true,
+          },
+        },
+      });
+
+      Logger.log(
+        `Found ${existings.length} class drive info records`,
+        'ClassDriveInfoService.SyncClassDriveData',
+      );
+
+      // Process each drive info
+      for (const driveInfo of existings) {
+        const userInfo = user ?? {
+          email: driveInfo.class.teacher.email,
+          role: driveInfo.class.teacher.roleName,
+        };
+
+        Logger.log(
+          `Processing class drive info for class ID: ${driveInfo.class.id}`,
+          'ClassDriveInfoService.SyncClassDriveData',
+        );
+
+        // Process student list
+        if (
+          (!request?.types || request.types.includes(ESyncDriveDataType.STUDENT_LIST)) &&
+          driveInfo.studentList?.driveId
+        ) {
+          await this.processStudentList(driveInfo, userInfo);
+        }
+
+        // Process assignment sheets
+        if (
+          (!request?.types || request.types.includes(ESyncDriveDataType.ASSIGNMENT_SHEET)) &&
+          driveInfo.assignmentSheets?.driveId
+        ) {
+          await this.processFormData(
+            driveInfo,
+            userInfo,
+            'assignmentSheets',
+            ThesisDocumentEnum.ASSIGNMENT_SHEET,
+            ESyncDriveDataType.ASSIGNMENT_SHEET,
+          );
+        }
+
+        // Process guidance reviews
+        if (
+          (!request?.types || request.types.includes(ESyncDriveDataType.GUIDANCE_REVIEW)) &&
+          driveInfo.guidanceReviews?.driveId
+        ) {
+          await this.processFormData(
+            driveInfo,
+            userInfo,
+            'guidanceReviews',
+            ThesisDocumentEnum.GUIDANCE_REVIEW,
+            ESyncDriveDataType.GUIDANCE_REVIEW,
+          );
+        }
+
+        // Process supervisory comments
+        if (
+          (!request?.types || request.types.includes(ESyncDriveDataType.SUPERVISORY_COMMENTS)) &&
+          driveInfo.supervisoryComments?.driveId
+        ) {
+          await this.processFormData(
+            driveInfo,
+            userInfo,
+            'supervisoryComments',
+            ThesisDocumentEnum.SUPERVISORY_COMMENTS,
+            ESyncDriveDataType.SUPERVISORY_COMMENTS,
+          );
+        }
+      }
+
+      return {
+        status: 'success',
+        message: existings.length
+          ? 'Sync class drive data successfully'
+          : 'No class drive info found',
+      };
+    } catch (error) {
+      Logger.error(
+        `Error syncing class drive data: ${error.message}`,
+        'ClassDriveInfoService.SyncClassDriveData',
+      );
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
+  }
+
+  /**
+   * Process student list data
+   */
+  private async processStudentList(driveInfo: any, userInfo: UserPayload | any): Promise<void> {
+    try {
+      Logger.log(
+        `Processing student list for class ID: ${driveInfo.class.id}`,
+        'ClassDriveInfoService.processStudentList',
+      );
+
+      if (driveInfo.studentList?.folderInputId) {
+        // Download input files
+        const inputFiles = await this.downloadFilesFromFolder(
+          driveInfo.studentList.folderInputId,
+          ESyncDriveDataType.STUDENT_LIST,
+        );
+
+        if (inputFiles.length > 0) {
+          // Import student list
+          await this.studentServiceV2.importListStudents(
+            inputFiles,
+            {
+              classId: driveInfo.class.id,
+            } as ImportListStudentRequest,
+            userInfo,
+          );
+
+          Logger.log(
+            `Successfully imported student list data`,
+            'ClassDriveInfoService.processStudentList',
+          );
+
+          if (driveInfo.studentList?.folderOutputId) {
+            // Generate output files (placeholder for future implementation)
+            Logger.log(
+              `Output folder exists for student list, but generation not implemented yet`,
+              'ClassDriveInfoService.processStudentList',
+            );
+          }
+        }
+      }
+    } catch (error) {
+      Logger.error(
+        `Error processing student list for class ID ${driveInfo.class.id}: ${error.message}`,
+        'ClassDriveInfoService.processStudentList',
+      );
+      // Continue with next process instead of failing the entire flow
+    }
+  }
+
+  /**
+   * Process form data (assignment sheets, guidance reviews, supervisory comments)
+   */
+  private async processFormData(
+    driveInfo: any,
+    userInfo: UserPayload | any,
+    propertyName: string,
+    docType: ThesisDocumentEnum,
+    syncType: ESyncDriveDataType,
+  ): Promise<void> {
+    try {
+      Logger.log(
+        `Processing ${syncType} for class ID: ${driveInfo.class.id}`,
+        'ClassDriveInfoService.processFormData',
+      );
+
+      if (driveInfo[propertyName]?.folderInputId) {
+        // Download input files
+        const inputFiles = await this.downloadFilesFromFolder(
+          driveInfo[propertyName].folderInputId,
+          syncType,
+        );
+
+        if (inputFiles.length > 0) {
+          // Import form data
+          await this.studentServiceV2.importStudentFormData(
+            inputFiles,
+            {
+              classId: driveInfo.class.id,
+              thesisDocType: docType,
+            } as ImportStudentFormDataRequestV2,
+            userInfo,
+          );
+
+          Logger.log(
+            `Successfully imported ${syncType} data`,
+            'ClassDriveInfoService.processFormData',
+          );
+
+          if (driveInfo[propertyName]?.folderOutputId) {
+            // Generate output files (placeholder for future implementation)
+            Logger.log(
+              `Output folder exists for ${syncType}, but generation not implemented yet`,
+              'ClassDriveInfoService.processFormData',
+            );
+          }
+        }
+      }
+    } catch (error) {
+      Logger.error(
+        `Error processing ${syncType} for class ID ${driveInfo.class.id}: ${error.message}`,
+        'ClassDriveInfoService.processFormData',
+      );
+      // Continue with next process instead of failing the entire flow
+    }
+  }
+
+  /**
+   * Download files from a folder
+   */
+  private async downloadFilesFromFolder(
+    folderId: string,
+    syncType: ESyncDriveDataType,
+  ): Promise<Express.Multer.File[]> {
+    try {
+      const inputFileIds = await this.driveApiService.listFiles({
+        driveIds: [folderId],
+        deps: 0,
+      });
+
+      Logger.log(
+        `Found ${inputFileIds.length} input files for ${syncType}`,
+        'ClassDriveInfoService.downloadFilesFromFolder',
+      );
+
+      const filteredFileIds = inputFileIds
+        .filter((file) => file.mimeType !== FOLDER_MIMETYPE)
+        .map((file) => file.id);
+
+      if (filteredFileIds.length === 0) {
+        Logger.log(
+          `No valid files found for ${syncType}`,
+          'ClassDriveInfoService.downloadFilesFromFolder',
+        );
+        return [];
+      }
+
+      Logger.log(
+        `Downloading ${filteredFileIds.length} files for ${syncType}`,
+        'ClassDriveInfoService.downloadFilesFromFolder',
+      );
+
+      const inputFiles = await this.driveApiService.downloadFiles(filteredFileIds).then((files) =>
+        files.map(
+          (file) =>
+            ({
+              originalname: file.fileName,
+              mimetype: file.mimeType,
+              buffer: file.buffer,
+              size: file.fileSize,
+            }) as Express.Multer.File,
+        ),
+      );
+
+      Logger.log(
+        `Successfully downloaded ${inputFiles.length} files for ${syncType}`,
+        'ClassDriveInfoService.downloadFilesFromFolder',
+      );
+
+      return inputFiles;
+    } catch (error) {
+      Logger.error(
+        `Error downloading files for ${syncType}: ${error.message}`,
+        'ClassDriveInfoService.downloadFilesFromFolder',
+      );
+      return [];
     }
   }
 }
