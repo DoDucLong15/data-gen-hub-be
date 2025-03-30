@@ -142,6 +142,10 @@ export class ClassController {
   }
 
   @Post(':classId/drive-info/sync')
+  @ApiBody({
+    type: SyncClassDriveDataRequest,
+    required: false,
+  })
   @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Classes })
   async syncDriveInfo(
     @Body() request: SyncClassDriveDataRequest,
