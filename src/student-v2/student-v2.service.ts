@@ -47,13 +47,14 @@ export class StudentServiceV2 {
     files: Express.Multer.File[],
     request: ImportListStudentRequest,
     user: UserPayload,
-    processId: string,
+    processId?: string,
   ): Promise<BaseResponse> {
     const errorCollector: Record<string, any> = {};
+    const progressId = processId ?? ProgressService.generateId('import-student-list-cron');
     try {
       await this.processService.createProgress([
         {
-          processId,
+          processId: progressId,
           type: EProgressType.STUDENT_LIST,
           action: ActionEnum.IMPORT,
           createBy: user.email,
@@ -124,7 +125,7 @@ export class StudentServiceV2 {
         );
       }
       await this.processService.makeCompleted(
-        { processId },
+        { processId: progressId },
         {
           error: errorCollector,
         },
@@ -137,7 +138,7 @@ export class StudentServiceV2 {
       Logger.error(error.message, error.stack, 'StudentsServiceV2.importListStudents');
       errorCollector['unknown'] = error;
       await this.processService.makeFailed(
-        { processId },
+        { processId: progressId },
         {
           error: errorCollector,
         },
@@ -154,13 +155,14 @@ export class StudentServiceV2 {
     request: ExportListStudentRequestV2,
     user: UserPayload,
     res: Response,
-    processId: string,
+    processId?: string,
   ): Promise<void> {
     const errorCollector: Record<string, any> = {};
+    const progressId = processId ?? ProgressService.generateId('export-student-list-cron');
     try {
       await this.processService.createProgress([
         {
-          processId,
+          processId: progressId,
           type: EProgressType.STUDENT_LIST,
           action: ActionEnum.EXPORT,
           createBy: user.email,
@@ -211,12 +213,15 @@ export class StudentServiceV2 {
           );
           res.setHeader('Content-Type', metaData?.contentType || 'application/octet-stream');
           res.send(output);
-          await this.processService.makeCompleted({ processId }, { error: errorCollector });
+          await this.processService.makeCompleted(
+            { processId: progressId },
+            { error: errorCollector },
+          );
           return;
         }
       }
       errorCollector['exist-output'] = 'Notfound file output';
-      await this.processService.makeCompleted({ processId }, { error: errorCollector });
+      await this.processService.makeCompleted({ processId: progressId }, { error: errorCollector });
       res.status(400).json({
         status: 'error',
         message: `Error exporting students: Notfound file output`,
@@ -224,7 +229,7 @@ export class StudentServiceV2 {
     } catch (error) {
       Logger.error(error.message, error.stack, 'StudentsService.exportListStudent');
       errorCollector['unknown'] = error;
-      await this.processService.makeFailed({ processId }, { error: errorCollector });
+      await this.processService.makeFailed({ processId: progressId }, { error: errorCollector });
       res.status(500).json({
         status: 'error',
         message: `Error exporting students: ${error.message}`,
@@ -235,13 +240,15 @@ export class StudentServiceV2 {
   async generateStudentFormData(
     request: ExportStudentFormDataRequestV2,
     user: UserPayload,
-    processId: string,
+    processId?: string,
   ): Promise<BaseResponse> {
     const errorCollector: Record<string, any> = {};
+    const progressId =
+      processId ?? ProgressService.generateId(`export-${request.thesisDocType}-cron`);
     try {
       await this.processService.createProgress([
         {
-          processId,
+          processId: progressId,
           type:
             request.thesisDocType === ThesisDocumentEnum.ASSIGNMENT_SHEET
               ? EProgressType.ASSIGNMENT_SHEET
@@ -291,7 +298,7 @@ export class StudentServiceV2 {
           teacher_sign_date: request.teacherSignatureDate,
         },
       );
-      await this.processService.makeCompleted({ processId }, { error: errorCollector });
+      await this.processService.makeCompleted({ processId: progressId }, { error: errorCollector });
       return {
         status: 'success',
         message: 'Generating student form data successfully',
@@ -299,7 +306,7 @@ export class StudentServiceV2 {
     } catch (error) {
       Logger.error(error.message, error.stack, 'StudentsService.generateStudentFormData');
       errorCollector['unknown'] = error;
-      await this.processService.makeFailed({ processId }, { error: errorCollector });
+      await this.processService.makeFailed({ processId: progressId }, { error: errorCollector });
       return {
         status: 'error',
         message: `Error generating student form data: ${error.message}`,
@@ -311,13 +318,15 @@ export class StudentServiceV2 {
     files: Express.Multer.File[],
     request: ImportStudentFormDataRequestV2,
     user: UserPayload,
-    processId: string,
+    processId?: string,
   ): Promise<BaseResponse> {
     const errorCollector: Record<string, any> = {};
+    const progressId =
+      processId ?? ProgressService.generateId(`import-${request.thesisDocType}-cron`);
     try {
       await this.processService.createProgress([
         {
-          processId,
+          processId: progressId,
           type:
             request.thesisDocType === ThesisDocumentEnum.ASSIGNMENT_SHEET
               ? EProgressType.ASSIGNMENT_SHEET
@@ -388,7 +397,7 @@ export class StudentServiceV2 {
           await AsyncUtils.delay(1000);
         }
       }
-      await this.processService.makeCompleted({ processId }, { error: errorCollector });
+      await this.processService.makeCompleted({ processId: progressId }, { error: errorCollector });
       return {
         status: 'success',
         message: 'Imported student form data successfully',
@@ -396,7 +405,7 @@ export class StudentServiceV2 {
     } catch (error) {
       Logger.error(error.message, error.stack, 'StudentsService.importStudentFormData');
       errorCollector['unknown'] = error;
-      await this.processService.makeFailed({ processId }, { error: errorCollector });
+      await this.processService.makeFailed({ processId: progressId }, { error: errorCollector });
       return {
         status: 'error',
         message: `Error importing student form data: ${error.message}`,

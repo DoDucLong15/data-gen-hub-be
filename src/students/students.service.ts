@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StudentEntity } from './entities/student.entity';
 import { FindManyOptions, FindOneOptions, In, Repository } from 'typeorm';
@@ -27,6 +27,7 @@ export class StudentsService {
   constructor(
     @InjectRepository(StudentEntity)
     private readonly studentRepository: Repository<StudentEntity>,
+    @Inject(forwardRef(() => ClassService))
     private readonly classService: ClassService,
     private readonly officeService: OfficeService,
     private readonly templateSpecificationService: TemplateSpecificationService,

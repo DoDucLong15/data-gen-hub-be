@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   Patch,
   Post,
@@ -16,7 +17,12 @@ import {
 import { ClassService } from './class.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
-import { CreateClassDto, DownloadFileFromDriveDto, UpdateClassDto } from './dtos/class.dto';
+import {
+  CreateClassDto,
+  DownloadFileFromDriveDto,
+  SyncClassDriveDataRequest,
+  UpdateClassDto,
+} from './dtos/class.dto';
 import { User } from 'src/auth/decorators/user.decorator';
 import { UserPayload } from 'src/auth/types/user-playload.type';
 import { ClassEntity } from './entities/class.entity';
@@ -29,6 +35,8 @@ import { DriveItem, UploadFilesResponse } from 'src/drive-apis/types/drive-confi
 import { Response } from 'express';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { CreateFolderDto, UploadFilesDto } from 'src/drive-apis/dtos/drive.dto';
+import { BaseResponse } from 'src/base/types/response.type';
+import { ProgressService } from 'src/progress/progress.service';
 
 @ApiTags('Class')
 @ApiBearerAuth()
@@ -133,5 +141,30 @@ export class ClassController {
       body.parentFolderId,
       user,
     );
+  }
+
+  @Post('drive-info/sync')
+  @ApiBody({
+    type: SyncClassDriveDataRequest,
+    required: false,
+  })
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Classes })
+  async syncDriveInfo(
+    @Body() request: SyncClassDriveDataRequest,
+    @User() user: UserPayload,
+  ): Promise<BaseResponse> {
+    const generateProcessId = ProgressService.generateId('sync-class-drive-data-manual');
+    this.classDriveInfoService
+      .syncClassDriveData(request, user, generateProcessId)
+      .catch((error) => {
+        Logger.error(error, `${this.constructor.name}.syncDriveInfo`);
+      });
+    return {
+      status: 'processing',
+      message: 'Processing sync class drive data',
+      data: {
+        processId: generateProcessId,
+      },
+    };
   }
 }
