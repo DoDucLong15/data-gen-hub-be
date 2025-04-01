@@ -81,7 +81,7 @@ export class UsersService {
     ) {
       throw new BadRequestException(`You can't update this user`);
     }
-    if (dto.roleId) {
+    if (dto.roleId && dto.roleId !== user.role.id) {
       if (
         !AbilityHelper.canAction(principalAbility, {
           action: EAction.MANAGE,
@@ -97,7 +97,7 @@ export class UsersService {
       user.role = role;
     }
 
-    if (dto.email) {
+    if (dto.email && dto.email !== user.email) {
       if (
         !AbilityHelper.canAction(principalAbility, {
           action: EAction.MANAGE,
