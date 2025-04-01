@@ -109,7 +109,7 @@ export class AuthService {
       throw new BadRequestException('Register already exists');
     }
     await this.registerService.createRegister(request);
-    if (SystemConfigUtils.adminEmails.length === 0) {
+    if (SystemConfigUtils.adminEmails?.length === 0) {
       Logger.warn('No admin emails found', 'AuthService');
     } else {
       this.mailerService

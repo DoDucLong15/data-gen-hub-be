@@ -60,5 +60,5 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
-  role?: string = RoleTypes.TEACHER;
+  roleId: string;
 }

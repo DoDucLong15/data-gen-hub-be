@@ -71,24 +71,20 @@ export class UsersService {
     if (updateBy.role !== RoleTypes.ADMIN && updateBy.email !== user.email) {
       throw new BadRequestException(`You can't update this user`);
     }
-    if (dto.role) {
-      if (updateBy.role !== RoleTypes.ADMIN) {
-        throw new BadRequestException(`You can't update role`);
-      }
-      const role = await this.roleService.findRoleByName(dto.role);
+    if (dto.roleId) {
+      const role = await this.roleService.getRoleById(dto.roleId);
       if (!role) {
-        throw new BadRequestException(`Role ${dto.role} not found`);
+        throw new BadRequestException(`Role ${dto.roleId} not found`);
       }
       user.role = role;
     }
-    delete dto.role;
     const userUpdate = await this.userRepository.save({
       ...user,
       ...dto,
-    } as UserEntity);
+    });
     return MapperUserResponse({
       ...userUpdate,
-      roleName: userUpdate.role.name,
+      roleName: user.role.name,
     } as UserEntity);
   }
 
