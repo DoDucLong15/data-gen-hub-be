@@ -19,6 +19,9 @@ import {
   MongoAbility,
   MongoQuery,
 } from '@casl/ability';
+import { AbilityHelper } from 'src/authorization/helpers/ability.helper';
+import { ESubject } from 'src/authorization/enums/subject.enum';
+import { EAction } from 'src/permissions/enums/action.enum';
 
 @Injectable()
 export class UsersService {
@@ -62,21 +65,48 @@ export class UsersService {
   }
 
   async updateUserInfo(dto: UpdateUserDto, updateBy: UserPayload): Promise<UserResponse> {
+    const principalAbility = await this.createPrincipalAbility(updateBy.email);
     const user = await this.userRepository.findOne({
       where: { id: dto.id },
     });
     if (!user) {
       throw new BadRequestException(`User ${dto.id} not found`);
     }
-    if (updateBy.role !== RoleTypes.ADMIN && updateBy.email !== user.email) {
+    if (
+      !AbilityHelper.canAction(principalAbility, {
+        action: EAction.MANAGE,
+        subject: ESubject.System_Users,
+      }) &&
+      updateBy.email !== user.email
+    ) {
       throw new BadRequestException(`You can't update this user`);
     }
     if (dto.roleId) {
+      if (
+        !AbilityHelper.canAction(principalAbility, {
+          action: EAction.MANAGE,
+          subject: ESubject.System_Users,
+        })
+      ) {
+        throw new BadRequestException(`You can't update role`);
+      }
       const role = await this.roleService.getRoleById(dto.roleId);
       if (!role) {
         throw new BadRequestException(`Role ${dto.roleId} not found`);
       }
       user.role = role;
+    }
+
+    if (dto.email) {
+      if (
+        !AbilityHelper.canAction(principalAbility, {
+          action: EAction.MANAGE,
+          subject: ESubject.System_Users,
+        })
+      ) {
+        throw new BadRequestException(`You can't update email`);
+      }
+      user.email = dto.email;
     }
     const userUpdate = await this.userRepository.save({
       ...user,

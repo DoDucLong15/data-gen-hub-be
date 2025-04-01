@@ -33,7 +33,6 @@ export class UsersController {
   }
 
   @Patch()
-  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.System_Users })
   async updateUser(
     @Body() request: UpdateUserDto,
     @User() user: UserPayload,
