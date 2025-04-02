@@ -13,6 +13,7 @@ export enum ESubject {
   Thesis_AssignmentSheets = 'thesis.assignmentSheets',
   Thesis_GuidanceReviews = 'thesis.guidanceReviews',
   Thesis_SupervisoryComments = 'thesis.supervisoryComments',
+  Thesis_Drive = 'thesis.drive',
 
   Progress = 'progress',
 
