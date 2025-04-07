@@ -33,7 +33,7 @@ export class StorageController {
   constructor(private readonly storageService: StorageService) {}
 
   @Post('download')
-  @CheckPolicies({ action: EAction.READ, subject: ESubject.Storage })
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Storage })
   @ApiBody({
     type: DownloadFilesDto,
   })

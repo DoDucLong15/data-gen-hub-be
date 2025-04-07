@@ -26,12 +26,13 @@ import { streamToBuffer } from 'src/storage/helpers/convert.helper';
 import { ThesisDocumentEnum } from 'src/thesis-management/enums/thesis-document.enum';
 import { ProgressService } from 'src/progress/progress.service';
 import { EProgressType } from 'src/progress/constant/progress.const';
+import { UsersService } from 'src/users/users.service';
+import { EAction } from 'src/permissions/enums/action.enum';
+import { ESubject } from 'src/authorization/enums/subject.enum';
 
 @Injectable()
 export class StudentServiceV2 {
   constructor(
-    @Inject(forwardRef(() => StudentsService))
-    private readonly studentService: StudentsService,
     @Inject(forwardRef(() => OfficeService))
     private readonly officeService: OfficeService,
     @Inject(forwardRef(() => ClassService))
@@ -41,6 +42,8 @@ export class StudentServiceV2 {
     @Inject(forwardRef(() => StorageService))
     private readonly storageService: StorageService,
     private readonly processService: ProgressService,
+    @Inject(forwardRef(() => UsersService))
+    private readonly userService: UsersService,
   ) {}
 
   async importListStudents(
@@ -410,6 +413,24 @@ export class StudentServiceV2 {
         status: 'error',
         message: `Error importing student form data: ${error.message}`,
       };
+    }
+  }
+
+  async validateActionWithThesisData(
+    email: string,
+    thesisType: ThesisDocumentEnum,
+    action: EAction,
+  ): Promise<boolean> {
+    const principalAbilities = await this.userService.createPrincipalAbility(email);
+    switch (thesisType) {
+      case ThesisDocumentEnum.ASSIGNMENT_SHEET:
+        return principalAbilities.can(action, ESubject.Thesis_AssignmentSheets);
+      case ThesisDocumentEnum.GUIDANCE_REVIEW:
+        return principalAbilities.can(action, ESubject.Thesis_GuidanceReviews);
+      case ThesisDocumentEnum.SUPERVISORY_COMMENTS:
+        return principalAbilities.can(action, ESubject.Thesis_SupervisoryComments);
+      default:
+        throw new BadRequestException('Invalid thesis type');
     }
   }
 }

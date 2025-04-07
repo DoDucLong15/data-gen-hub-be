@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   ClassSerializerInterceptor,
   Controller,
@@ -90,6 +91,14 @@ export class StudentControllerV2 {
     @User() user: UserPayload,
   ): Promise<BaseResponse> {
     const generateProcessId = ProgressService.generateId(`export-${request.thesisDocType}-manual`);
+    const permitted = await this.studentV2Service.validateActionWithThesisData(
+      user.email,
+      request.thesisDocType,
+      EAction.READ,
+    );
+    if (!permitted) {
+      throw new BadRequestException('You do not have permission to perform this action');
+    }
     this.studentV2Service
       .generateStudentFormData(request, user, generateProcessId)
       .catch((error) => {
@@ -123,6 +132,14 @@ export class StudentControllerV2 {
     @UploadedFiles() files: Express.Multer.File[],
   ): Promise<BaseResponse> {
     const generateProcessId = ProgressService.generateId(`import-${request.thesisDocType}-manual`);
+    const permitted = await this.studentV2Service.validateActionWithThesisData(
+      user.email,
+      request.thesisDocType,
+      EAction.MANAGE,
+    );
+    if (!permitted) {
+      throw new BadRequestException('You do not have permission to perform this action');
+    }
     this.studentV2Service
       .importStudentFormData(files, request, user, generateProcessId)
       .catch((error) => {
