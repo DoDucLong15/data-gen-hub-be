@@ -22,6 +22,7 @@ export class SystemConfigUtils {
   > = TemplateSpecificationImportSingleStudent;
   public static adminEmails: string[];
   public static approveRegisterUrl: string;
+  public static enableTeacherEmailCheck: boolean = false;
 
   static getValue(entity: SystemConfigEntity): string | number | boolean | any {
     if (CommonUtils.isNotNullish(entity.stringValue)) return entity.stringValue;
