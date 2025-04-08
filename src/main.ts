@@ -4,10 +4,12 @@ import { setup } from './setup';
 import { ConfigService } from '@nestjs/config';
 import { configuration } from './config/configuration';
 import { Logger } from '@nestjs/common';
-
+import { initializeLogger } from './logger';
 const configService = new ConfigService(configuration());
 
 async function bootstrap() {
+  initializeLogger();
+
   const app = await NestFactory.create(AppModule);
 
   setup(app);
