@@ -2,13 +2,22 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ClassController } from './class.controller';
 import { ClassService } from './class.service';
 import { ClassDriveInfoService } from './sub-services/class-drive-info.service';
-import { CreateClassDto, UpdateClassDto } from './dtos/class.dto';
+import { CreateClassDto, SyncClassDriveDataRequest, UpdateClassDto } from './dtos/class.dto';
 import { UserPayload } from 'src/auth/types/user-playload.type';
 import { ClassEntity } from './entities/class.entity';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, Logger } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { PoliciesGuard } from 'src/authorization/guards/policies.guard';
 import { APP_GUARD } from '@nestjs/core';
+import { ESyncDriveDataType } from './enums/sync-data.type';
+import { ProgressService } from 'src/progress/progress.service';
+
+// Mock ProgressService.generateId
+jest.mock('src/progress/progress.service', () => ({
+  ProgressService: {
+    generateId: jest.fn().mockReturnValue('mock-process-id'),
+  },
+}));
 
 describe('ClassController', () => {
   let controller: ClassController;
@@ -119,6 +128,9 @@ describe('ClassController', () => {
     controller = module.get<ClassController>(ClassController);
     classService = module.get<ClassService>(ClassService);
     classDriveInfoService = module.get<ClassDriveInfoService>(ClassDriveInfoService);
+
+    // Clear all mocks before each test
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -242,6 +254,129 @@ describe('ClassController', () => {
       // Act & Assert
       await expect(controller.update(mockUpdateClassDto, mockUserPayload)).rejects.toThrow(error);
       expect(classService.update).toHaveBeenCalledWith(mockUpdateClassDto, mockUserPayload);
+    });
+  });
+
+  describe('syncDriveInfo', () => {
+    // Mock data for syncDriveInfo tests
+    const mockSyncRequest: SyncClassDriveDataRequest = {
+      classIds: ['class-id-1', 'class-id-2'],
+      types: [ESyncDriveDataType.STUDENT_LIST, ESyncDriveDataType.ASSIGNMENT_SHEET],
+    };
+
+    // Scenario 1: Successfully start sync process with all parameters
+    it('should successfully start sync process with all parameters', async () => {
+      // Arrange
+      jest.spyOn(classDriveInfoService, 'syncClassDriveData').mockResolvedValueOnce({
+        status: 'success',
+        message: 'Sync completed successfully',
+      });
+      jest.spyOn(Logger, 'error').mockImplementation(() => {});
+
+      // Act
+      const result = await controller.syncDriveInfo(mockSyncRequest, mockUserPayload);
+
+      // Assert
+      expect(ProgressService.generateId).toHaveBeenCalledWith('sync-class-drive-data-manual');
+      expect(classDriveInfoService.syncClassDriveData).toHaveBeenCalledWith(
+        mockSyncRequest,
+        mockUserPayload,
+        'mock-process-id',
+      );
+      expect(result).toEqual({
+        status: 'processing',
+        message: 'Processing sync class drive data',
+        data: {
+          processId: 'mock-process-id',
+        },
+      });
+    });
+
+    // Scenario 2: Successfully start sync process with empty request
+    it('should successfully start sync process with empty request', async () => {
+      // Arrange
+      const emptyRequest = {} as SyncClassDriveDataRequest;
+      jest.spyOn(classDriveInfoService, 'syncClassDriveData').mockResolvedValueOnce({
+        status: 'success',
+        message: 'Sync completed successfully',
+      });
+      jest.spyOn(Logger, 'error').mockImplementation(() => {});
+
+      // Act
+      const result = await controller.syncDriveInfo(emptyRequest, mockUserPayload);
+
+      // Assert
+      expect(ProgressService.generateId).toHaveBeenCalledWith('sync-class-drive-data-manual');
+      expect(classDriveInfoService.syncClassDriveData).toHaveBeenCalledWith(
+        emptyRequest,
+        mockUserPayload,
+        'mock-process-id',
+      );
+      expect(result).toEqual({
+        status: 'processing',
+        message: 'Processing sync class drive data',
+        data: {
+          processId: 'mock-process-id',
+        },
+      });
+    });
+
+    // Scenario 3: Handle service throwing an error
+    it('should handle service throwing an error', async () => {
+      // Arrange
+      const error = new Error('Sync process failed');
+      jest.spyOn(classDriveInfoService, 'syncClassDriveData').mockRejectedValueOnce(error);
+      jest.spyOn(Logger, 'error').mockImplementation(() => {});
+
+      // Act
+      const result = await controller.syncDriveInfo(mockSyncRequest, mockUserPayload);
+
+      // Assert
+      expect(ProgressService.generateId).toHaveBeenCalledWith('sync-class-drive-data-manual');
+      expect(classDriveInfoService.syncClassDriveData).toHaveBeenCalledWith(
+        mockSyncRequest,
+        mockUserPayload,
+        'mock-process-id',
+      );
+      expect(Logger.error).toHaveBeenCalledWith(error, 'ClassController.syncDriveInfo');
+      expect(result).toEqual({
+        status: 'processing',
+        message: 'Processing sync class drive data',
+        data: {
+          processId: 'mock-process-id',
+        },
+      });
+    });
+
+    // Scenario 4: Successfully start sync with specific data types
+    it('should successfully start sync with specific data types', async () => {
+      // Arrange
+      const specificTypesRequest = {
+        types: [ESyncDriveDataType.GUIDANCE_REVIEW, ESyncDriveDataType.SUPERVISORY_COMMENTS],
+      } as SyncClassDriveDataRequest;
+      jest.spyOn(classDriveInfoService, 'syncClassDriveData').mockResolvedValueOnce({
+        status: 'success',
+        message: 'Sync completed successfully',
+      });
+      jest.spyOn(Logger, 'error').mockImplementation(() => {});
+
+      // Act
+      const result = await controller.syncDriveInfo(specificTypesRequest, mockUserPayload);
+
+      // Assert
+      expect(ProgressService.generateId).toHaveBeenCalledWith('sync-class-drive-data-manual');
+      expect(classDriveInfoService.syncClassDriveData).toHaveBeenCalledWith(
+        specificTypesRequest,
+        mockUserPayload,
+        'mock-process-id',
+      );
+      expect(result).toEqual({
+        status: 'processing',
+        message: 'Processing sync class drive data',
+        data: {
+          processId: 'mock-process-id',
+        },
+      });
     });
   });
 });

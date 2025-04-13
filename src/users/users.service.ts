@@ -39,8 +39,12 @@ export class UsersService {
   async createUser(dto: CreateUserDto): Promise<UserResponse> {
     const existingUser = await this.userRepository.findOne({
       where: { email: dto.email },
+      withDeleted: true,
     });
     if (existingUser) {
+      if (existingUser.deletedAt) {
+        throw new BadRequestException(`User ${dto.email} already exists, please restore it.`);
+      }
       throw new BadRequestException(`User ${dto.email} already exists`);
     }
     const role = await this.roleService.getRoleById(dto.roleId);
