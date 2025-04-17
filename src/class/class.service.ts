@@ -31,7 +31,10 @@ export class ClassService {
       ...request,
       teacher,
     });
-    if (SystemConfigUtils.defaultTemplateSpecification) {
+    if (
+      SystemConfigUtils.defaultTemplateSpecification &&
+      SystemConfigUtils.defaultTemplateSpecification.length > 0
+    ) {
       this.templateSpecificationService
         ._save(
           SystemConfigUtils.defaultTemplateSpecification.map((template) => {

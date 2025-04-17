@@ -11,6 +11,7 @@ import {
 } from './dtos/system-config.dto';
 import { Keys } from './constants/key.const';
 import { SystemConfigUtils as SCU, SystemConfigUtils } from './utils/system-config.util';
+import { isBoolean } from 'class-validator';
 
 @Injectable()
 export class SystemConfigurationService {
@@ -86,6 +87,12 @@ export class SystemConfigurationService {
           if (stringValue) {
             SystemConfigUtils.approveRegisterUrl = stringValue;
             Logger.verbose(`Updated APPROVE_REGISTER_URL`, 'SystemConfigService');
+          }
+        } else if (config.key === Keys.ENABLE_TEACHER_EMAIL_CHECK) {
+          const booleanValue = SCU.getBoolean(config);
+          if (isBoolean(booleanValue)) {
+            SystemConfigUtils.enableTeacherEmailCheck = booleanValue;
+            Logger.verbose(`Updated ENABLE_TEACHER_EMAIL_CHECK`, 'SystemConfigService');
           }
         }
       }

@@ -27,6 +27,7 @@ import { MockModule } from './mock/mock.module';
 import { OnedriveModule } from './onedrive/onedrive.module';
 import { CronManagementModule } from './cron-management/cron-management.module';
 import { DriveApisModule } from './drive-apis/drive-apis.module';
+import { CompressionMiddleware } from './base/middlewares/compression.middleware';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -74,6 +75,6 @@ const environment = process.env.NODE_ENV ?? 'local';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(LogsMiddleware).forRoutes('*');
+    consumer.apply(LogsMiddleware, CompressionMiddleware).forRoutes('*');
   }
 }

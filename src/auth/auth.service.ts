@@ -29,6 +29,11 @@ export class AuthService {
   ) {}
 
   async signIn(request: SignInDto): Promise<SignInResponse> {
+    if (SystemConfigUtils.enableTeacherEmailCheck) {
+      if (!request.email?.endsWith('@hust.edu.vn') && request.email !== process.env.TESTER_EMAIL) {
+        throw new UnauthorizedException('Only HUST teacher email is allowed');
+      }
+    }
     try {
       const response = await axios.get(ApiEndpoints.SIGN_IN, {
         params: {
@@ -95,6 +100,10 @@ export class AuthService {
   }
 
   async register(request: CreateUserDto): Promise<BaseResponse> {
+    // check user belong to HUST
+    if (!request.email?.endsWith('hust.edu.vn')) {
+      throw new UnauthorizedException('Only HUST email is allowed');
+    }
     const existingUser = await this.usersService.getUser({
       where: { email: request.email },
       withDeleted: true,

@@ -26,13 +26,15 @@ export class RolesController {
         },
       })
       .then((roles) =>
-        roles.map((role) => {
-          const { users, ...rest } = role;
-          return {
-            ...rest,
-            userCount: users.length,
-          };
-        }),
+        roles
+          .map((role) => {
+            const { users, ...rest } = role;
+            return {
+              ...rest,
+              userCount: users.length,
+            };
+          })
+          .sort((a, b) => a.name.localeCompare(b.name)),
       );
   }
 
