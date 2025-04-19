@@ -96,7 +96,7 @@ export class StudentServiceV2 {
           const res = await this.storageService.uploadDataToFile(
             file.buffer,
             file.mimetype,
-            `data-gen-hub/${request.classId}/students/input/${Date.now()}_${file.originalname}`,
+            CommonUtils.getStudentFilePath(request.classId, 'students', 'input', file.originalname),
           );
           if (res) {
             inputPath = res.key;
@@ -382,7 +382,12 @@ export class StudentServiceV2 {
           const res = await this.storageService.uploadDataToFile(
             file.buffer,
             file.mimetype,
-            `data-gen-hub/${request.classId}/${request.thesisDocType}/input/${Date.now()}_${file.originalname}`,
+            CommonUtils.getStudentFilePath(
+              request.classId,
+              request.thesisDocType,
+              'input',
+              file.originalname,
+            ),
           );
           if (res) {
             path = res.key;
