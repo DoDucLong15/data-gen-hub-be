@@ -84,4 +84,13 @@ export class CommonUtils {
   static isNotEmptyArray(arr: any[]): boolean {
     return arr && arr.length > 0;
   }
+
+  static getStudentFilePath(
+    classId: string,
+    name: string,
+    action: string,
+    originalName: string,
+  ): string {
+    return `data-gen-hub/${classId}/${name}/${action}/${Date.now()}_${originalName}`;
+  }
 }
