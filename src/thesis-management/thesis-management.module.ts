@@ -8,6 +8,8 @@ import { SupervisoryCommentsEntity } from './entities/supervisory-comments.entit
 import { ClassModule } from 'src/class/class.module';
 import { StorageModule } from 'src/storage/storage.module';
 import { UsersModule } from 'src/users/users.module';
+import { OfficeModule } from 'src/office/office.module';
+import { TemplateSpecificationModule } from 'src/template-specification/template-specification.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { UsersModule } from 'src/users/users.module';
     forwardRef(() => ClassModule),
     forwardRef(() => StorageModule),
     forwardRef(() => UsersModule),
+    forwardRef(() => OfficeModule),
+    forwardRef(() => TemplateSpecificationModule),
   ],
   controllers: [ThesisManagementController],
   providers: [ThesisManagementService],

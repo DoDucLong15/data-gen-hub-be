@@ -1,4 +1,4 @@
-import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AssignmentSheetsEntity } from './entities/assignment-sheet.entity';
 import { Repository } from 'typeorm';
@@ -39,6 +39,12 @@ import {
   UpdateSupervisoryCommentsDto,
 } from './dtos/supervisory-comments.dto';
 import { UserPayload } from 'src/auth/types/user-playload.type';
+import { OfficeService } from 'src/office/office.service';
+import { TemplateSpecificationService } from 'src/template-specification/template-specification.service';
+import { ActionEnum } from 'src/template-specification/enums/action.enum';
+import { SpecificationNameEnum } from 'src/template-specification/constants/default.const';
+import { streamToBuffer } from 'src/storage/helpers/convert.helper';
+import { CommonUtils } from 'src/utils/common.util';
 
 @Injectable()
 export class ThesisManagementService {
@@ -52,6 +58,8 @@ export class ThesisManagementService {
     private readonly supervisoryCommentsRepository: Repository<SupervisoryCommentsEntity>,
     private readonly classService: ClassService,
     private readonly storageService: StorageService,
+    private readonly officeService: OfficeService,
+    private readonly specificationService: TemplateSpecificationService,
   ) {
     this.use(
       ThesisDocumentEnum.ASSIGNMENT_SHEET,
@@ -83,7 +91,9 @@ export class ThesisManagementService {
     user: UserPayload,
   ): Promise<any> {
     const strategy = this.getStrategy(request.thesisDocType);
-    return await strategy.create(request, user);
+    const newEntity = await strategy.create(request, user);
+    await this.syncDataAndFile(newEntity.id, request.thesisDocType, user);
+    return newEntity;
   }
 
   async update(
@@ -91,7 +101,9 @@ export class ThesisManagementService {
     user: UserPayload,
   ): Promise<any> {
     const strategy = this.getStrategy(request.thesisDocType);
-    return await strategy.update(request, user);
+    const newEntity = await strategy.update(request, user);
+    await this.syncDataAndFile(newEntity.id, request.thesisDocType, user);
+    return newEntity;
   }
 
   async list(
@@ -139,5 +151,90 @@ export class ThesisManagementService {
   ) {
     const strategy = this.getStrategy(request.thesisDocType);
     return await strategy.deleteFile(request, user);
+  }
+
+  private async syncDataAndFile(id: string, thesisDocType: ThesisDocumentEnum, user: UserPayload) {
+    const entity = await this.getOne({ id, thesisDocType }, user);
+    const classId = entity.class.id;
+    const [specificationExport, specificationImport] = await Promise.all([
+      this.specificationService.getOne({
+        where: {
+          classId: classId,
+          action: ActionEnum.EXPORT,
+          name:
+            thesisDocType === ThesisDocumentEnum.ASSIGNMENT_SHEET
+              ? SpecificationNameEnum.PGNV
+              : thesisDocType === ThesisDocumentEnum.GUIDANCE_REVIEW
+                ? SpecificationNameEnum.NXHD
+                : SpecificationNameEnum.NXPB,
+        },
+      }),
+      this.specificationService.getOne({
+        where: {
+          classId: classId,
+          action: ActionEnum.IMPORT,
+          name:
+            thesisDocType === ThesisDocumentEnum.ASSIGNMENT_SHEET
+              ? SpecificationNameEnum.PGNV
+              : thesisDocType === ThesisDocumentEnum.GUIDANCE_REVIEW
+                ? SpecificationNameEnum.NXHD
+                : SpecificationNameEnum.NXPB,
+        },
+      }),
+    ]);
+    if (!specificationExport || !specificationImport) {
+      return;
+    }
+    await this.officeService.exportSingleByScript(
+      classId,
+      [id],
+      specificationExport.templateFile,
+      specificationImport.jsonFile,
+      thesisDocType,
+      {
+        thesis_start_date: entity.thesisStartDate,
+        thesis_end_date: entity.thesisEndDate,
+        teacher_sign_date: entity.teacherSignatureDate,
+      },
+    );
+    const newEntity = await this.getOne({ id, thesisDocType }, user);
+    if (newEntity.outputPath) {
+      const generatedFile = await this.storageService.downloadFile(newEntity.outputPath);
+      const metadata = await this.storageService.getMetadata(newEntity.outputPath);
+      if (generatedFile) {
+        const buffer = await streamToBuffer(generatedFile);
+        const res = await this.storageService.uploadDataToFile(
+          buffer,
+          metadata?.contentType ??
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          CommonUtils.getStudentFilePath(
+            classId,
+            thesisDocType,
+            'input',
+            metadata?.name?.split('/').pop() ?? `${entity.mssv}.xlsx`,
+          ),
+        );
+        if (res) {
+          newEntity.inputPath = res.key;
+          switch (thesisDocType) {
+            case ThesisDocumentEnum.ASSIGNMENT_SHEET:
+              await this.assignmentSheetsRepository.save(newEntity);
+              break;
+            case ThesisDocumentEnum.GUIDANCE_REVIEW:
+              await this.guidanceReviewRepository.save(newEntity);
+              break;
+            case ThesisDocumentEnum.SUPERVISORY_COMMENTS:
+              await this.supervisoryCommentsRepository.save(newEntity);
+              break;
+            default:
+              Logger.warn(
+                `Sync data and file failed, thesisDocType: ${thesisDocType}`,
+                'ThesisManagementService.syncDataAndFile',
+              );
+              break;
+          }
+        }
+      }
+    }
   }
 }
