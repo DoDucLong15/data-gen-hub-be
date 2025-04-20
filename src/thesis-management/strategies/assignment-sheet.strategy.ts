@@ -97,11 +97,13 @@ export class AssignmentSheetStrategy implements ThesisDocumentInterface {
     }
     if (entity.inputPath) {
       await this.storageService.deleteFile(entity.inputPath);
+      entity.inputPath = null;
     }
-    if (entity.outputPath) {
-      await this.storageService.deleteFile(entity.outputPath);
+    if (!entity.outputPath) {
+      await this.repository.delete(request.id);
+    } else {
+      await this.repository.save(entity);
     }
-    await this.repository.delete(request.id);
     return {
       status: 'success',
       message: 'Assignment sheet deleted',
@@ -121,6 +123,9 @@ export class AssignmentSheetStrategy implements ThesisDocumentInterface {
               email: user.email,
             },
           },
+        },
+        relations: {
+          class: true,
         },
       })) || ({} as AssignmentSheetsEntity)
     );
@@ -219,7 +224,11 @@ export class AssignmentSheetStrategy implements ThesisDocumentInterface {
           await this.storageService.deleteFile(entity.outputPath);
           entity.outputPath = null;
         }
-        return await this.repository.save(entity);
+        if (entity.inputPath) {
+          return await this.repository.save(entity);
+        } else {
+          return await this.repository.delete(entity.id);
+        }
       }),
     );
 
