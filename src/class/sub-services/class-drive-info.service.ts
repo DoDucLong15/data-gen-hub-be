@@ -424,6 +424,7 @@ export class ClassDriveInfoService {
 
       // Process each drive info
       for (const driveInfo of existings) {
+        const lastSync = driveInfo.lastSync;
         const userInfo = user ?? {
           email: driveInfo.class.teacher.email,
           role: driveInfo.class.teacher.roleName,
@@ -439,7 +440,7 @@ export class ClassDriveInfoService {
           (!request?.types || request.types.includes(ESyncDriveDataType.STUDENT_LIST)) &&
           driveInfo.studentList?.driveId
         ) {
-          await this.processStudentList(driveInfo, userInfo);
+          await this.processStudentList(driveInfo, userInfo, lastSync);
         }
 
         // Process assignment sheets
@@ -453,6 +454,7 @@ export class ClassDriveInfoService {
             'assignmentSheets',
             ThesisDocumentEnum.ASSIGNMENT_SHEET,
             ESyncDriveDataType.ASSIGNMENT_SHEET,
+            lastSync,
           );
         }
 
@@ -467,6 +469,7 @@ export class ClassDriveInfoService {
             'guidanceReviews',
             ThesisDocumentEnum.GUIDANCE_REVIEW,
             ESyncDriveDataType.GUIDANCE_REVIEW,
+            lastSync,
           );
         }
 
@@ -481,8 +484,11 @@ export class ClassDriveInfoService {
             'supervisoryComments',
             ThesisDocumentEnum.SUPERVISORY_COMMENTS,
             ESyncDriveDataType.SUPERVISORY_COMMENTS,
+            lastSync,
           );
         }
+        driveInfo.lastSync = new Date().toISOString();
+        await this.classDriveInfoRepository.save(driveInfo);
       }
 
       await this.progressService.makeCompleted({ processId }, { error: errorCollector });
@@ -515,7 +521,11 @@ export class ClassDriveInfoService {
   /**
    * Process student list data
    */
-  private async processStudentList(driveInfo: any, userInfo: UserPayload | any): Promise<void> {
+  private async processStudentList(
+    driveInfo: any,
+    userInfo: UserPayload | any,
+    lastSync: string,
+  ): Promise<void> {
     try {
       Logger.log(
         `Processing student list for class ID: ${driveInfo.class.id}`,
@@ -527,6 +537,8 @@ export class ClassDriveInfoService {
         const inputFiles = await this.downloadFilesFromFolder(
           driveInfo.studentList.folderInputId,
           ESyncDriveDataType.STUDENT_LIST,
+          lastSync,
+          true,
         );
 
         if (inputFiles.length > 0) {
@@ -571,6 +583,7 @@ export class ClassDriveInfoService {
     propertyName: string,
     docType: ThesisDocumentEnum,
     syncType: ESyncDriveDataType,
+    lastSync: string,
   ): Promise<void> {
     try {
       Logger.log(
@@ -583,6 +596,8 @@ export class ClassDriveInfoService {
         const inputFiles = await this.downloadFilesFromFolder(
           driveInfo[propertyName].folderInputId,
           syncType,
+          lastSync,
+          true,
         );
 
         if (inputFiles.length > 0) {
@@ -625,6 +640,8 @@ export class ClassDriveInfoService {
   private async downloadFilesFromFolder(
     folderId: string,
     syncType: ESyncDriveDataType,
+    lastSync: string,
+    fetchNewFiles: boolean = false,
   ): Promise<Express.Multer.File[]> {
     try {
       const inputFileIds = await this.driveApiService.listFiles({
@@ -639,6 +656,12 @@ export class ClassDriveInfoService {
 
       const filteredFileIds = inputFileIds
         .filter((file) => file.mimeType !== FOLDER_MIMETYPE)
+        .filter((file) => {
+          if (fetchNewFiles && lastSync) {
+            return file.modifiedTime >= lastSync;
+          }
+          return true;
+        })
         .map((file) => file.id);
 
       if (filteredFileIds.length === 0) {

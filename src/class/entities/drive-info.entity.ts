@@ -33,4 +33,7 @@ export class ClassDriveInfoEntity extends AbstractAuditingEntity {
   // FOREIGN KEY
   @Column({ type: 'varchar', name: 'class_id' })
   classId: string;
+
+  @Column({ type: 'varchar', name: 'last_sync', nullable: true })
+  lastSync: string;
 }
