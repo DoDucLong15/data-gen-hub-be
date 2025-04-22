@@ -45,6 +45,11 @@ import { ActionEnum } from 'src/template-specification/enums/action.enum';
 import { SpecificationNameEnum } from 'src/template-specification/constants/default.const';
 import { streamToBuffer } from 'src/storage/helpers/convert.helper';
 import { CommonUtils } from 'src/utils/common.util';
+import {
+  FormCompletionRate,
+  FormImportExportStats,
+  LecturerDashboardResponse,
+} from './types/dashboard.type';
 
 @Injectable()
 export class ThesisManagementService {
@@ -236,5 +241,126 @@ export class ThesisManagementService {
         }
       }
     }
+  }
+
+  async getLecturerDashboard(classId: string): Promise<LecturerDashboardResponse> {
+    const students: Array<{ mssv: string; fullName: string }> =
+      await this.classService.getStudentsByClassId(classId);
+
+    const [assignmentSheets, guidanceReviews, supervisoryComments] = await Promise.all([
+      this.assignmentSheetsRepository.find({ where: { class: { id: classId } } }),
+      this.guidanceReviewRepository.find({ where: { class: { id: classId } } }),
+      this.supervisoryCommentsRepository.find({ where: { class: { id: classId } } }),
+    ]);
+
+    const assignmentSheetMap = new Map(assignmentSheets.map((a) => [a.mssv, a]));
+    const guidanceReviewMap = new Map(guidanceReviews.map((g) => [g.mssv, g]));
+    const supervisoryCommentMap = new Map(supervisoryComments.map((s) => [s.mssv, s]));
+
+    const mssvSet = new Set<string>();
+    students.forEach((stu) => mssvSet.add(stu.mssv));
+    assignmentSheets.forEach((a) => mssvSet.add(a.mssv));
+    guidanceReviews.forEach((g) => mssvSet.add(g.mssv));
+    supervisoryComments.forEach((s) => mssvSet.add(s.mssv));
+
+    const studentMap = new Map<string, { mssv: string; fullName: string }>();
+    students.forEach((stu) => studentMap.set(stu.mssv, stu));
+
+    const studentFormStatus = Array.from(mssvSet).map((mssv) => {
+      const fromList = studentMap.get(mssv);
+      return {
+        mssv,
+        fullName:
+          fromList?.fullName ||
+          assignmentSheetMap.get(mssv)?.fullName ||
+          guidanceReviewMap.get(mssv)?.fullName ||
+          supervisoryCommentMap.get(mssv)?.fullName ||
+          '',
+        assignmentSheet: assignmentSheetMap.has(mssv),
+        guidanceReview: guidanceReviewMap.has(mssv),
+        supervisoryComment: supervisoryCommentMap.has(mssv),
+        missingInStudentList: !fromList,
+      };
+    });
+
+    const total = mssvSet.size;
+    const formCompletionRates: FormCompletionRate[] = [
+      {
+        formType: 'assignmentSheet',
+        completed: assignmentSheets.length,
+        total,
+      },
+      {
+        formType: 'guidanceReview',
+        completed: guidanceReviews.length,
+        total,
+      },
+      {
+        formType: 'supervisoryComment',
+        completed: supervisoryComments.length,
+        total,
+      },
+    ];
+
+    const scoreRanges = [
+      { range: '9-10', min: 9, max: 10 },
+      { range: '8-8.9', min: 8, max: 8.9 },
+      { range: '7-7.9', min: 7, max: 7.9 },
+      { range: '6-6.9', min: 6, max: 6.9 },
+      { range: '<6', min: 0, max: 5.9 },
+    ];
+    const scoreDistribution = scoreRanges.map((r) => ({
+      range: r.range,
+      count: guidanceReviews.filter((g) => {
+        const totalScore = this.calcTotalGuidanceScore(g);
+        return totalScore >= r.min && totalScore <= r.max;
+      }).length,
+    }));
+
+    const formImportExportStats: FormImportExportStats[] = [
+      {
+        formType: 'assignmentSheet',
+        importedCount: assignmentSheets.filter((a) => a.inputPath).length,
+        exportedCount: assignmentSheets.filter((a) => a.outputPath).length,
+        total: assignmentSheets.length,
+      },
+      {
+        formType: 'guidanceReview',
+        importedCount: guidanceReviews.filter((g) => g.inputPath).length,
+        exportedCount: guidanceReviews.filter((g) => g.outputPath).length,
+        total: guidanceReviews.length,
+      },
+      {
+        formType: 'supervisoryComment',
+        importedCount: supervisoryComments.filter((s) => s.inputPath).length,
+        exportedCount: supervisoryComments.filter((s) => s.outputPath).length,
+        total: supervisoryComments.length,
+      },
+    ];
+
+    return {
+      studentFormStatus,
+      formCompletionRates,
+      scoreDistribution,
+      formImportExportStats,
+    };
+  }
+
+  private calcTotalGuidanceScore(g: any): number {
+    const fields = [
+      'topicUniquenessPoint',
+      'workloadPoint',
+      'problemDifficultyPoint',
+      'solutionImpactPoint',
+      'productFinalizationPoint',
+      'layoutCoherencePoint',
+      'contentValidityPoint',
+      'presentationQualityPoint',
+      'reliabilityAndReferencesPoint',
+      'responseAccuracyPoint',
+      'presentationSkillsPoint',
+      'rewardPoint',
+    ];
+    return fields.reduce((sum, key) => sum + (typeof g[key] === 'number' ? g[key] : 0), 0);
   }
 }

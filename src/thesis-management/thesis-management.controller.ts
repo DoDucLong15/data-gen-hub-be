@@ -10,6 +10,7 @@ import {
   Res,
   UseGuards,
   UseInterceptors,
+  Param,
 } from '@nestjs/common';
 import { ThesisManagementService } from './thesis-management.service';
 import {
@@ -53,6 +54,7 @@ import { CheckPolicies } from 'src/authorization/decorators/check-policies.decor
 import { ESubject } from 'src/authorization/enums/subject.enum';
 import { PoliciesGuardV2 } from 'src/authorization/guards/policies-v2.guard';
 import { CheckPoliciesV2 } from 'src/authorization/decorators/check-policies-v2.decorator';
+import { LecturerDashboardResponse } from './types/dashboard.type';
 
 @ApiTags('Thesis Management')
 @ApiBearerAuth()
@@ -227,5 +229,12 @@ export class ThesisManagementController {
     @User() user: UserPayload,
   ): Promise<any> {
     return await this.thesisManagementService.deleteFile(request, user);
+  }
+
+  @Get('dashboard/:classId')
+  async getLecturerDashboard(
+    @Param('classId') classId: string,
+  ): Promise<LecturerDashboardResponse> {
+    return this.thesisManagementService.getLecturerDashboard(classId);
   }
 }
