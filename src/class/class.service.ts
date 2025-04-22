@@ -99,4 +99,18 @@ export class ClassService {
     await this.repository.softDelete(id);
     return true;
   }
+
+  async getStudentsByClassId(classId: string) {
+    const classObj = await this.repository.findOne({
+      where: { id: classId },
+      relations: ['students'],
+    });
+    if (!classObj) return [];
+    return classObj.students.map((stu) => ({
+      ...stu,
+      fullName:
+        stu.fullName ||
+        `${stu.lastName ?? ''} ${stu.middleName ?? ''} ${stu.firstName ?? ''}`.trim(),
+    }));
+  }
 }
