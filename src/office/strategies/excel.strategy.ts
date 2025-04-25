@@ -330,9 +330,9 @@ export class ExcelStrategy implements OfficeStrategy {
           /\.xlsx$/,
           `_${new Date().toISOString().replace(/[:.]/g, '_')}.xlsx`,
         ) || 'export.xlsx';
-      if (template.config?.nameFormat) {
+      if (template.config?.nameformat) {
         let temp = '';
-        template.config.nameFormat.map((s) => {
+        template.config.nameformat.map((s) => {
           if (s.startsWith('?')) {
             temp += (data as Record<string, any>)[s.substring(1)];
           } else {

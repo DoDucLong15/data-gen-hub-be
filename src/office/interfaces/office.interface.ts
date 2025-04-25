@@ -1,4 +1,7 @@
-import { JsonMappingSingleType } from 'src/template-specification/types/json.type';
+import {
+  JsonMappingSingleType,
+  JsonMappingWordSingleType,
+} from 'src/template-specification/types/json.type';
 import { JsonMappingListType } from '../types/json-mapping-list.type';
 import { ThesisDocumentEnum } from 'src/thesis-management/enums/thesis-document.enum';
 
@@ -12,7 +15,7 @@ export interface OfficeStrategy {
   exportSingle<T extends any>(
     data: T,
     templateFile: Partial<Express.Multer.File>,
-    template: JsonMappingSingleType,
+    template: JsonMappingSingleType | JsonMappingWordSingleType,
   ): Promise<Partial<Express.Multer.File>>;
   importSingle<T extends any>(
     file: Express.Multer.File,
