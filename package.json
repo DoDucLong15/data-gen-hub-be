@@ -56,6 +56,7 @@
     "class-validator": "^0.14.1",
     "compression": "^1.8.0",
     "decompress": "^4.2.1",
+    "docxtemplater": "^3.61.1",
     "exceljs": "^4.4.0",
     "firebase": "^11.4.0",
     "firebase-admin": "^13.1.0",
@@ -66,8 +67,10 @@
     "passport-google-oauth2": "^0.2.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.13.0",
+    "pizzip": "^3.1.8",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
+    "slugify": "^1.6.6",
     "typeorm": "^0.3.20",
     "uuid": "^11.1.0",
     "xlsx": "^0.18.5"
