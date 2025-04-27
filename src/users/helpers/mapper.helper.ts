@@ -19,5 +19,6 @@ export const MapperUserResponse = (user: UserEntity): UserResponse => {
       action: permission.action,
       subject: permission.subject,
     })),
+    avatar: user.avatar,
   };
 };

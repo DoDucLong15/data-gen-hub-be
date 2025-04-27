@@ -3,6 +3,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { RoleEnity } from '../../roles/entities/role.entity';
 import { Exclude, Expose } from 'class-transformer';
 import { ClassEntity } from '../../class/entities/class.entity';
+import { TImageInfo } from 'src/utils/types/image-info.type';
 
 @Entity('users')
 export class UserEntity extends AbstractAuditingEntity {
@@ -45,4 +46,7 @@ export class UserEntity extends AbstractAuditingEntity {
     cascade: true,
   })
   classes: ClassEntity[];
+
+  @Column({ type: 'jsonb', nullable: true })
+  avatar: TImageInfo | null;
 }

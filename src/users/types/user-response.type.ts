@@ -1,3 +1,5 @@
+import { TImageInfo } from 'src/utils/types/image-info.type';
+
 export type UserResponse = {
   id: string;
   email: string;
@@ -15,4 +17,5 @@ export type UserResponse = {
     action: string;
     subject: string;
   }[];
+  avatar: TImageInfo | null;
 };

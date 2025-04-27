@@ -22,6 +22,7 @@ import {
 import { AbilityHelper } from 'src/authorization/helpers/ability.helper';
 import { ESubject } from 'src/authorization/enums/subject.enum';
 import { EAction } from 'src/permissions/enums/action.enum';
+import { StorageService } from 'src/storage/storage.service';
 
 @Injectable()
 export class UsersService {
@@ -34,6 +35,7 @@ export class UsersService {
     private readonly userRepository: Repository<UserEntity>,
     private readonly roleService: RolesService,
     private readonly mailerService: MailerService,
+    private readonly storageService: StorageService,
   ) {}
 
   async createUser(dto: CreateUserDto): Promise<UserResponse> {
@@ -68,7 +70,11 @@ export class UsersService {
     return MapperUserResponse(newUser);
   }
 
-  async updateUserInfo(dto: UpdateUserDto, updateBy: UserPayload): Promise<UserResponse> {
+  async updateUserInfo(
+    dto: UpdateUserDto,
+    updateBy: UserPayload,
+    file: Express.Multer.File,
+  ): Promise<UserResponse> {
     const principalAbility = await this.createPrincipalAbility(updateBy.email);
     const user = await this.userRepository.findOne({
       where: { id: dto.id },
@@ -112,6 +118,21 @@ export class UsersService {
       }
       user.email = dto.email;
     }
+
+    if (file) {
+      if (user.avatar?.key) {
+        await this.storageService.deleteFile(user.avatar.key);
+      }
+      const uploadResult = await this.storageService.uploadDataToFile(
+        file.buffer,
+        file.mimetype,
+        `data-gen-hub/users/${user.id}_${file.originalname}`,
+      );
+      if (uploadResult) {
+        user.avatar = uploadResult;
+      }
+    }
+
     const userUpdate = await this.userRepository.save({
       ...user,
       ...dto,
@@ -129,6 +150,11 @@ export class UsersService {
     });
     if (!user) {
       throw new BadRequestException(`User ${id} not found`);
+    }
+    if (user.avatar?.key) {
+      await this.storageService.deleteFile(user.avatar.key);
+      user.avatar = null;
+      await this.userRepository.save(user);
     }
     if (!user.deletedAt) await this.userRepository.softDelete(id);
     else await this.userRepository.delete(id);
