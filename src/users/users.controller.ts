@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateUserDto, UpdateUserDto } from './dtos/user.dto';
@@ -15,6 +26,7 @@ import { CheckPolicies } from 'src/authorization/decorators/check-policies.decor
 import { EAction } from 'src/permissions/enums/action.enum';
 import { ESubject } from 'src/authorization/enums/subject.enum';
 import { PoliciesGuard } from 'src/authorization/guards/policies.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -33,11 +45,26 @@ export class UsersController {
   }
 
   @Patch()
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 1024 * 1024 * 5,
+      },
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+          cb(null, true);
+        } else {
+          cb(new Error('Invalid file type'), false);
+        }
+      },
+    }),
+  )
   async updateUser(
     @Body() request: UpdateUserDto,
     @User() user: UserPayload,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<UserResponse> {
-    return await this.usersService.updateUserInfo(request, user);
+    return await this.usersService.updateUserInfo(request, user, file);
   }
 
   @Get('me')
