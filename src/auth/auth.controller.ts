@@ -40,7 +40,7 @@ export class AuthController {
   }
 
   @Get('onedrive/login')
-  @Redirect()
+  // @Redirect()
   login() {
     return { url: this.authService.getOnedriveAuthUrl() };
   }
@@ -53,9 +53,59 @@ export class AuthController {
 
     try {
       const tokens = await this.authService.processOnedriveCallback(code);
-      return tokens;
+
+      // Trả về HTML với script đóng cửa sổ và gửi message về parent window
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Xác thực thành công</title>
+        </head>
+        <body>
+          <h3>Xác thực OneDrive thành công!</h3>
+          <p>Cửa sổ này sẽ tự đóng...</p>
+          <script>
+            // Gửi thông báo thành công đến trang chính (nếu có)
+            if (window.opener) {
+              window.opener.postMessage({ 
+                status: 'success', 
+                type: 'onedrive-auth',
+                data: ${JSON.stringify(tokens)}
+              }, '*');
+            }
+            // Đóng cửa sổ popup sau 1 giây
+            setTimeout(function() { window.close(); }, 1000);
+          </script>
+        </body>
+        </html>
+      `);
     } catch (error) {
-      return res.status(500).json({ error: 'Failed to get access token' });
+      Logger.error('OneDrive callback error:', error);
+      // Trả về HTML với thông báo lỗi và script đóng cửa sổ
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Xác thực thất bại</title>
+        </head>
+        <body>
+          <h3>Xác thực OneDrive thất bại!</h3>
+          <p>Đã xảy ra lỗi: ${error.message || 'Không xác định'}</p>
+          <script>
+            // Gửi thông báo lỗi đến trang chính (nếu có)
+            if (window.opener) {
+              window.opener.postMessage({ 
+                status: 'error', 
+                type: 'onedrive-auth',
+                error: '${error.message || 'Không xác định'}'
+              }, '*');
+            }
+            // Đóng cửa sổ popup sau 3 giây để người dùng có thể đọc thông báo lỗi
+            setTimeout(function() { window.close(); }, 3000);
+          </script>
+        </body>
+        </html>
+      `);
     }
   }
 

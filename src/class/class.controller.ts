@@ -37,6 +37,8 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { CreateFolderDto, UploadFilesDto } from 'src/drive-apis/dtos/drive.dto';
 import { BaseResponse } from 'src/base/types/response.type';
 import { ProgressService } from 'src/progress/progress.service';
+import { ClassOnedriveInfoService } from './sub-services/class-onedrive-info.service';
+import { TOnedriveHierarchy } from 'src/onedrive/types/onedrive.type';
 
 @ApiTags('Class')
 @ApiBearerAuth()
@@ -46,6 +48,7 @@ export class ClassController {
   constructor(
     private readonly classService: ClassService,
     private readonly classDriveInfoService: ClassDriveInfoService,
+    private readonly classOnedriveInfoService: ClassOnedriveInfoService,
   ) {}
 
   @Post()
@@ -80,13 +83,13 @@ export class ClassController {
   }
 
   @Get(':id/drive-info')
-  @CheckPolicies({ action: EAction.READ, subject: ESubject.Thesis_Drive })
+  @CheckPolicies({ action: EAction.READ, subject: ESubject.Thesis_GoogleDrive })
   async getDriveInfo(@Param('id') id: string, @User() user: UserPayload): Promise<DriveItem> {
     return await this.classDriveInfoService.getByClassId(id, user);
   }
 
   @Get(':classId/drive-info/download')
-  @CheckPolicies({ action: EAction.READ, subject: ESubject.Thesis_Drive })
+  @CheckPolicies({ action: EAction.READ, subject: ESubject.Thesis_GoogleDrive })
   async downloadDriveInfo(
     @Param('classId') classId: string,
     @Query() request: DownloadFileFromDriveDto,
@@ -104,7 +107,7 @@ export class ClassController {
       },
     }),
   )
-  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_Drive })
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_GoogleDrive })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     type: UploadFilesDto,
@@ -119,7 +122,7 @@ export class ClassController {
   }
 
   @Delete(':classId/drive-info/:fileId')
-  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_Drive })
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_GoogleDrive })
   async deleteFile(
     @Param('classId') classId: string,
     @Param('fileId') fileId: string,
@@ -129,7 +132,7 @@ export class ClassController {
   }
 
   @Post(':classId/drive-info/folders')
-  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_Drive })
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_GoogleDrive })
   async createFolder(
     @Body() body: CreateFolderDto,
     @Param('classId') classId: string,
@@ -148,7 +151,7 @@ export class ClassController {
     type: SyncClassDriveDataRequest,
     required: false,
   })
-  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_Drive })
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_GoogleDrive })
   async syncDriveInfo(
     @Body() request: SyncClassDriveDataRequest,
     @User() user: UserPayload,
@@ -162,6 +165,79 @@ export class ClassController {
     return {
       status: 'processing',
       message: 'Processing sync class drive data',
+      data: {
+        processId: generateProcessId,
+      },
+    };
+  }
+
+  @Get(':id/onedrive-info')
+  @CheckPolicies({ action: EAction.READ, subject: ESubject.Thesis_Onedrive })
+  async getOnedriveInfo(
+    @Param('id') id: string,
+    @User() user: UserPayload,
+  ): Promise<TOnedriveHierarchy> {
+    return await this.classOnedriveInfoService.getByClassId(id, user);
+  }
+
+  @Post(':classId/onedrive-info/upload')
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10 MB
+      },
+    }),
+  )
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_Onedrive })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    type: UploadFilesDto,
+  })
+  async uploadOnedriveFiles(
+    @Param('classId') classId: string,
+    @Body() body: UploadFilesDto,
+    @UploadedFiles() files: Express.Multer.File[],
+    @User() user: UserPayload,
+  ): Promise<any> {
+    return await this.classOnedriveInfoService.uploadFiles(
+      classId,
+      files,
+      body.driveId,
+      body.folderId,
+      user,
+    );
+  }
+
+  @Delete(':classId/onedrive-info/:driveId/:fileId')
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_Onedrive })
+  async deleteOnedriveFile(
+    @Param('classId') classId: string,
+    @Param('driveId') driveId: string,
+    @Param('fileId') fileId: string,
+    @User() user: UserPayload,
+  ): Promise<boolean> {
+    return await this.classOnedriveInfoService.deleteFile(classId, driveId, fileId, user);
+  }
+
+  @Post('onedrive-info/sync')
+  @ApiBody({
+    type: SyncClassDriveDataRequest,
+    required: false,
+  })
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_Onedrive })
+  async syncOnedriveInfo(
+    @Body() request: SyncClassDriveDataRequest,
+    @User() user: UserPayload,
+  ): Promise<BaseResponse> {
+    const generateProcessId = ProgressService.generateId('sync-class-onedrive-data-manual');
+    this.classOnedriveInfoService
+      .syncClassDriveData(request, user, generateProcessId)
+      .catch((error) => {
+        Logger.error(error, `${this.constructor.name}.syncOnedriveInfo`);
+      });
+    return {
+      status: 'processing',
+      message: 'Processing sync class onedrive data',
       data: {
         processId: generateProcessId,
       },

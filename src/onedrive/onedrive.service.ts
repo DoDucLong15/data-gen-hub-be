@@ -1,8 +1,17 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { SystemConfigurationService } from 'src/system-configuration/system-configuration.service';
-import { TOnedriveDataConnectorConfig } from './types/onedrive.type';
+import {
+  TOnedriveChildren,
+  TOnedriveDataConnectorConfig,
+  TOnedriveHierarchy,
+  TOnedriveItem,
+  TOnedrivePreviewItem,
+} from './types/onedrive.type';
 import { DATA_CONNECTOR_ONEDRIVE } from 'src/auth/constants/data-connector.const';
+import { TOnedriveMe } from './types/root.type';
+import { TOnedriveShareLinkInfo } from './types/share-link.type';
+import { OnedriveHelper } from './helpers/onedrive.helper';
 
 @Injectable()
 export class OnedriveService {
@@ -24,25 +33,28 @@ export class OnedriveService {
     return dataConnector.jsonValue as TOnedriveDataConnectorConfig;
   }
 
-  async getMe() {
+  async getMe(): Promise<TOnedriveMe> {
     const url = `${this.baseUrl}/v1.0/me`;
     return await this.requestForObject(url, 'GET');
   }
 
-  async listItemsInMyDrive() {
+  async getChildrenInRootDrive(): Promise<TOnedriveItem[]> {
     try {
-      Logger.verbose('Listing items in my drive', 'OnedriveService.listItemsInMyDrive');
+      Logger.verbose('Listing items in my drive', 'OnedriveService.getChildrenInRootDrive');
       const url = `${this.baseUrl}/v1.0/me/drive/root/children`;
       return await this.requestForArray(url, 'GET');
     } catch (error) {
-      Logger.error(error, 'OnedriveService.listItemsInMyDrive');
+      Logger.error(error, 'OnedriveService.getChildrenInRootDrive');
       throw new BadRequestException(error);
     } finally {
-      Logger.verbose('Listing items in my drive completed', 'OnedriveService.listItemsInMyDrive');
+      Logger.verbose(
+        'Listing items in my drive completed',
+        'OnedriveService.getChildrenInRootDrive',
+      );
     }
   }
 
-  async getInfoSharedLink(sharedLink: string) {
+  async getInfoSharedLink(sharedLink: string): Promise<TOnedriveShareLinkInfo> {
     try {
       Logger.verbose(
         `Getting info shared link: ${sharedLink}`,
@@ -71,22 +83,25 @@ export class OnedriveService {
     }
   }
 
-  async getDriveItemSharedLink(sharedLink: string) {
+  async getChildrenFromSharedLink(
+    sharedLink: string,
+    expand: boolean = false,
+  ): Promise<TOnedriveChildren> {
     try {
       Logger.verbose(
         `Getting drive item shared link: ${sharedLink}`,
-        'OnedriveService.getDriveItemSharedLink',
+        'OnedriveService.getChildrenFromSharedLink',
       );
       const encodedLink = this.encodeShareLink(sharedLink);
 
       // Log để debug
       Logger.verbose(
         `Encoded share link: ${encodedLink}`,
-        'OnedriveService.getDriveItemSharedLink',
+        'OnedriveService.getChildrenFromSharedLink',
       );
 
-      const url = `${this.baseUrl}/v1.0/shares/${encodedLink}/driveItem`;
-      Logger.verbose(`URL: ${url}`, 'OnedriveService.getDriveItemSharedLink');
+      const url = `${this.baseUrl}/v1.0/shares/${encodedLink}/driveItem${expand ? '?$expand=children' : ''}`;
+      Logger.verbose(`URL: ${url}`, 'OnedriveService.getChildrenFromSharedLink');
 
       return await this.requestForObject(url, 'GET');
     } catch (error) {
@@ -96,22 +111,22 @@ export class OnedriveService {
           status: error.response?.status,
           headers: error.response?.headers,
         },
-        'OnedriveService.getDriveItemSharedLink',
+        'OnedriveService.getChildrenFromSharedLink',
       );
       throw new BadRequestException('Failed to get drive item shared link', error.message);
     } finally {
       Logger.verbose(
         `Getting drive item shared link completed`,
-        'OnedriveService.getDriveItemSharedLink',
+        'OnedriveService.getChildrenFromSharedLink',
       );
     }
   }
 
-  async listChildrenFromSharedLink(sharedLink: string, folderId?: string) {
+  async listItemsFromSharedLink(sharedLink: string, folderId?: string) {
     try {
       Logger.verbose(
         `Listing children from shared link: ${sharedLink}`,
-        'OnedriveService.listChildrenFromSharedLink',
+        'OnedriveService.listItemsFromSharedLink',
       );
 
       const nextLink = folderId
@@ -120,7 +135,7 @@ export class OnedriveService {
 
       return await this.requestForArray(nextLink, 'GET');
     } catch (error) {
-      Logger.error(error.response?.data, 'OnedriveService.listChildrenFromSharedLink');
+      Logger.error(error.response?.data, 'OnedriveService.listItemsFromSharedLink');
       throw new BadRequestException(
         'Failed to list children from shared link',
         error.response?.data,
@@ -128,7 +143,7 @@ export class OnedriveService {
     } finally {
       Logger.verbose(
         `Listing children from shared link completed`,
-        'OnedriveService.listChildrenFromSharedLink',
+        'OnedriveService.listItemsFromSharedLink',
       );
     }
   }
@@ -182,11 +197,11 @@ export class OnedriveService {
     }
   }
 
-  async downloadFileFromSharedLink(sharedLink: string) {
+  async downloadFileSharedLink(sharedLink: string) {
     try {
       Logger.verbose(
         `Downloading file from shared link: ${sharedLink}`,
-        'OnedriveService.downloadFileFromSharedLink',
+        'OnedriveService.downloadFileSharedLink',
       );
       const dataConnectorConfig = await this.getDataConnectorConfig();
 
@@ -217,7 +232,7 @@ export class OnedriveService {
         downloadResponse.data.on('error', reject);
       });
 
-      Logger.verbose(`File downloaded successfully`, 'OnedriveService.downloadFileFromSharedLink');
+      Logger.verbose(`File downloaded successfully`, 'OnedriveService.downloadFileSharedLink');
       // Return info about the file
       return {
         fileName: downloadResponse.headers['content-disposition'],
@@ -226,38 +241,82 @@ export class OnedriveService {
         bufferLength: buffer.length,
       };
     } catch (error) {
-      Logger.error(error.response?.data, 'OnedriveService.downloadFileFromSharedLink');
+      Logger.error(error.response?.data, 'OnedriveService.downloadFileSharedLink');
       throw new BadRequestException('Failed to download file', error.response?.data);
     }
   }
 
-  async uploadFile(
-    parentFolderId: string,
-    fileBuffer: Buffer,
-    fileName: string,
-    options?: {
-      contentType?: string;
-    },
-  ) {
+  async downloadFileFromSpecificDrive(driveId: string, fileId: string) {
     try {
       Logger.verbose(
-        `Uploading file to parent folder ID: ${parentFolderId}`,
-        'OnedriveService.uploadFile',
+        `Downloading file from drive ID: ${driveId}`,
+        'OnedriveService.downloadFileFromSpecificDrive',
       );
       const dataConnectorConfig = await this.getDataConnectorConfig();
 
+      // Get download URL
+      const downloadUrlResponse = await axios.get(
+        `${this.baseUrl}/v1.0/drives/${driveId}/items/${fileId}/content`,
+        {
+          headers: {
+            Authorization: `Bearer ${dataConnectorConfig.accessToken}`,
+          },
+          maxRedirects: 0,
+          validateStatus: (status) => status === 302, // We expect a redirect
+        },
+      );
+
+      // Follow the redirect to download the file
+      const downloadResponse = await axios({
+        method: 'get',
+        url: downloadUrlResponse.headers.location,
+        responseType: 'stream',
+      });
+
+      // Stream to buffer
+      const buffer = await new Promise<Buffer>((resolve, reject) => {
+        const chunks: Buffer[] = [];
+        downloadResponse.data.on('data', (chunk: Buffer) => chunks.push(chunk));
+        downloadResponse.data.on('end', () => resolve(Buffer.concat(chunks)));
+        downloadResponse.data.on('error', reject);
+      });
+
+      Logger.verbose(
+        `File downloaded successfully`,
+        'OnedriveService.downloadFileFromSpecificDrive',
+      );
+      // Return info about the file
+      return {
+        originalname: OnedriveHelper.parseContentDisposition(
+          downloadResponse.headers['content-disposition'],
+        ),
+        mimetype: downloadResponse.headers['content-type'],
+        buffer: buffer,
+        size: downloadResponse.headers['content-length'],
+      };
+    } catch (error) {
+      Logger.error(error.response?.data, 'OnedriveService.downloadFileFromSpecificDrive');
+      throw new BadRequestException('Failed to download file', error.response?.data);
+    }
+  }
+
+  async uploadFileToRootDrive(parentFolderId: string, fileBuffer: Buffer, fileName: string) {
+    try {
+      Logger.verbose(
+        `Uploading file to parent folder ID: ${parentFolderId}`,
+        'OnedriveService.uploadFileToRootDrive',
+      );
+      const dataConnectorConfig = await this.getDataConnectorConfig();
+
+      // Xử lý tên file an toàn
+      const safeFileName = OnedriveHelper.sanitizeFileNameForOneDriveUrl(fileName);
+
       // Create upload session
       const createSessionResponse = await axios.post(
-        `${this.baseUrl}/v1.0/me/drive/items/${parentFolderId}:/${fileName}:/createUploadSession`,
+        `${this.baseUrl}/v1.0/me/drive/items/${parentFolderId}:/${safeFileName}:/createUploadSession`,
         {
           item: {
-            '@microsoft.graph.conflictBehavior': 'replace', // Optional: how to handle existing files
-            ...(options?.contentType && {
-              fileSystemInfo: {
-                '@odata.type': 'microsoft.graph.fileSystemInfo',
-              },
-              mimeType: options.contentType,
-            }),
+            '@microsoft.graph.conflictBehavior': 'replace',
           },
         },
         {
@@ -278,7 +337,7 @@ export class OnedriveService {
         },
       });
 
-      Logger.verbose(`File uploaded successfully`, 'OnedriveService.uploadFile');
+      Logger.verbose(`File uploaded successfully`, 'OnedriveService.uploadFileToRootDrive');
       return {
         id: uploadResponse.data.id,
         name: fileName,
@@ -286,8 +345,122 @@ export class OnedriveService {
         webUrl: uploadResponse.data.webUrl,
       };
     } catch (error) {
-      Logger.error(error.response?.data, 'OnedriveService.uploadFile');
+      Logger.error(error.response?.data, 'OnedriveService.uploadFileToRootDrive');
       throw new BadRequestException('Failed to upload file', error.response?.data);
+    }
+  }
+
+  async uploadFileToSpecificDrive(
+    driveId: string,
+    parentFolderId: string,
+    fileBuffer: Buffer,
+    fileName: string,
+  ) {
+    try {
+      Logger.verbose(
+        `Uploading file to parent folder ID: ${parentFolderId}`,
+        'OnedriveService.uploadFileToSpecificDrive',
+      );
+      const dataConnectorConfig = await this.getDataConnectorConfig();
+
+      // Xử lý tên file an toàn
+      const safeFileName = OnedriveHelper.sanitizeFileNameForOneDriveUrl(fileName);
+      Logger.debug(`Safe file name: ${safeFileName}`, 'OnedriveService.uploadFileToSpecificDrive');
+      // Create upload session
+      const createSessionResponse = await axios.post(
+        `${this.baseUrl}/v1.0/drives/${driveId}/items/${parentFolderId}:/${safeFileName}:/createUploadSession`,
+        {
+          item: {
+            '@microsoft.graph.conflictBehavior': 'replace',
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${dataConnectorConfig.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      const uploadUrl = createSessionResponse.data.uploadUrl;
+
+      // Upload entire buffer in one request
+      const uploadResponse = await axios.put(uploadUrl, fileBuffer, {
+        headers: {
+          'Content-Length': fileBuffer.length,
+          'Content-Range': `bytes 0-${fileBuffer.length - 1}/${fileBuffer.length}`,
+        },
+      });
+
+      Logger.verbose(`File uploaded successfully`, 'OnedriveService.uploadFileToSpecificDrive');
+      return {
+        id: uploadResponse.data.id,
+        name: fileName,
+        size: fileBuffer.length,
+        webUrl: uploadResponse.data.webUrl,
+      };
+    } catch (error) {
+      Logger.error(error.response?.data, 'OnedriveService.uploadFileToSpecificDrive');
+      throw new BadRequestException('Failed to upload file', error.response?.data);
+    }
+  }
+
+  async uploadMultipleFilesToSpecificDrive(
+    driveId: string,
+    parentFolderId: string,
+    files: Array<{ buffer: Buffer; fileName: string }>,
+  ) {
+    try {
+      Logger.verbose(
+        `Bắt đầu upload ${files.length} file vào thư mục ID: ${parentFolderId}`,
+        'OnedriveService.uploadMultipleFilesToSpecificDrive',
+      );
+
+      const results = await Promise.all(
+        files.map(async (file) => {
+          try {
+            const result = await this.uploadFileToSpecificDrive(
+              driveId,
+              parentFolderId,
+              file.buffer,
+              file.fileName,
+            );
+            return {
+              success: true,
+              file: result,
+            };
+          } catch (error) {
+            Logger.error(
+              `Lỗi khi upload file ${file.fileName}: ${error.message}`,
+              'OnedriveService.uploadMultipleFilesToSpecificDrive',
+            );
+            return {
+              success: false,
+              fileName: file.fileName,
+              error: error.message || 'Unknown error',
+            };
+          }
+        }),
+      );
+
+      const successCount = results.filter((r) => r.success).length;
+      Logger.verbose(
+        `Upload hoàn tất: ${successCount}/${files.length} file thành công`,
+        'OnedriveService.uploadMultipleFilesToSpecificDrive',
+      );
+
+      return {
+        totalFiles: files.length,
+        successCount,
+        failedCount: files.length - successCount,
+        results,
+      };
+    } catch (error) {
+      Logger.error(
+        `Lỗi upload nhiều file: ${error.message}`,
+        'OnedriveService.uploadMultipleFilesToSpecificDrive',
+      );
+      throw new BadRequestException('Lỗi khi upload nhiều file', error.response?.data);
     }
   }
 
@@ -461,6 +634,222 @@ export class OnedriveService {
     } catch (error) {
       Logger.error(error.response?.data || error, 'OnedriveService.requestForObject');
       throw new BadRequestException('Failed to fetch data', error.response?.data);
+    }
+  }
+
+  async listChildrenFromSpecificDrive(driveId: string, folderId: string): Promise<TOnedriveItem[]> {
+    try {
+      Logger.verbose(
+        `Listing children from drive ID: ${driveId}`,
+        'OnedriveService.listChildrenFromSpecificDrive',
+      );
+
+      const url = `${this.baseUrl}/v1.0/drives/${driveId}/items/${folderId}/children`;
+
+      const response = await this.requestForObject(url, 'GET');
+      return (response as any)?.value || [];
+    } catch (error) {
+      Logger.error(error.response?.data, 'OnedriveService.listChildrenFromSpecificDrive');
+      throw new BadRequestException('Failed to list children from drive ID', error.response?.data);
+    } finally {
+      Logger.verbose(
+        `Listing children from drive ID completed`,
+        'OnedriveService.listChildrenFromSpecificDrive',
+      );
+    }
+  }
+
+  async listFileSharedLinkWithHierarchy(
+    sharedLink: string,
+    deep: boolean = false,
+    maxDepth: number = 5,
+  ): Promise<TOnedriveHierarchy> {
+    try {
+      Logger.verbose(
+        `Listing files with hierarchy from shared link: ${sharedLink}, deep: ${deep}`,
+        'OnedriveService.listFileSharedLinkWithHierarchy',
+      );
+
+      // Lấy thông tin chi tiết từ liên kết chia sẻ
+      const rootInfo = await this.getChildrenFromSharedLink(sharedLink, false);
+
+      if (!rootInfo) {
+        return {} as TOnedriveHierarchy;
+      }
+
+      // Lấy ra driveId và id của thư mục gốc
+      const driveId = rootInfo.parentReference?.driveId;
+      const rootId = rootInfo.id;
+
+      // Tạo cấu trúc nút gốc
+      const rootNode: TOnedriveChildren = {
+        ...rootInfo,
+        children: [],
+      };
+
+      // Nếu không có driveId hoặc không có quyền truy cập, trả về nút gốc trống
+      if (!driveId) {
+        return rootNode;
+      }
+
+      // Hàm đệ quy để xây dựng cây phân cấp
+      const buildHierarchy = async (
+        driveId: string,
+        folderId: string,
+        folderNode: any,
+        depth: number,
+      ): Promise<void> => {
+        // Nếu đã vượt quá độ sâu tối đa, dừng đệ quy
+        if (depth > maxDepth) {
+          return;
+        }
+
+        // Lấy danh sách mục con trong thư mục
+        const items = await this.listChildrenFromSpecificDrive(driveId, folderId);
+
+        if (!items || !items.length) {
+          return;
+        }
+
+        // Xử lý từng mục con
+        for (const item of items) {
+          const isFolder = !!item.folder;
+
+          // Tạo node cho mục này
+          const node: TOnedriveChildren = {
+            ...item,
+            children: isFolder ? [] : undefined,
+          };
+
+          // Thêm vào danh sách con của thư mục cha
+          folderNode.children.push(node);
+
+          // Nếu là thư mục và cần đi sâu, tiếp tục đệ quy
+          if (isFolder && deep && depth < maxDepth) {
+            await buildHierarchy(driveId, item.id, node, depth + 1);
+          }
+        }
+      };
+
+      // Bắt đầu xây dựng cấu trúc phân cấp từ thư mục gốc
+      await buildHierarchy(driveId, rootId, rootNode, 1);
+
+      return rootNode;
+    } catch (error) {
+      Logger.error(error.response?.data, 'OnedriveService.listFileSharedLinkWithHierarchy');
+      throw new BadRequestException(
+        'Failed to list files with hierarchy from shared link',
+        error.response?.data,
+      );
+    } finally {
+      Logger.verbose(
+        `Listing files with hierarchy from shared link completed`,
+        'OnedriveService.listFileSharedLinkWithHierarchy',
+      );
+    }
+  }
+
+  async getPreviewItemInRootDrive(fileId: string): Promise<TOnedrivePreviewItem> {
+    try {
+      Logger.verbose(
+        `Getting preview item in root drive: ${fileId}`,
+        'OnedriveService.getPreviewItemInRootDrive',
+      );
+      const url = `${this.baseUrl}/v1.0/me/drive/items/${fileId}/preview`;
+      return await this.requestForObject(url, 'POST');
+    } catch (error) {
+      Logger.error(error.response?.data, 'OnedriveService.getPreviewItemInRootDrive');
+      throw new BadRequestException(
+        'Failed to get preview item in root drive',
+        error.response?.data,
+      );
+    } finally {
+      Logger.verbose(
+        `Getting preview item in root drive completed`,
+        'OnedriveService.getPreviewItemInRootDrive',
+      );
+    }
+  }
+
+  async getPreviewItemInSpecificDrive(
+    driveId: string,
+    fileId: string,
+  ): Promise<TOnedrivePreviewItem> {
+    try {
+      Logger.verbose(
+        `Getting preview item in specific drive: ${driveId}`,
+        'OnedriveService.getPreviewItemInSpecificDrive',
+      );
+      const url = `${this.baseUrl}/v1.0/drives/${driveId}/items/${fileId}/preview`;
+      return await this.requestForObject(url, 'POST');
+    } catch (error) {
+      Logger.error(error.response?.data, 'OnedriveService.getPreviewItemInSpecificDrive');
+      throw new BadRequestException(
+        'Failed to get preview item in specific drive',
+        error.response?.data,
+      );
+    } finally {
+      Logger.verbose(
+        `Getting preview item in specific drive completed`,
+        'OnedriveService.getPreviewItemInSpecificDrive',
+      );
+    }
+  }
+
+  async createFolderInSpecificDrive(
+    driveId: string,
+    parentFolderId: string,
+    folderName: string,
+  ): Promise<TOnedriveItem> {
+    try {
+      Logger.verbose(
+        `Creating folder ${folderName} in specific drive: ${driveId}`,
+        'OnedriveService.createFolderInSpecificDrive',
+      );
+      const url = `${this.baseUrl}/v1.0/drives/${driveId}/items/${parentFolderId}/children`;
+      return await this.requestForObject(
+        url,
+        'POST',
+        {},
+        {
+          name: folderName,
+          folder: {},
+          '@microsoft.graph.conflictBehavior': 'rename',
+        },
+      );
+    } catch (error) {
+      Logger.error(error.response?.data, 'OnedriveService.createFolderInSpecificDrive');
+      throw new BadRequestException(
+        'Failed to create folder in specific drive',
+        error.response?.data,
+      );
+    } finally {
+      Logger.verbose(
+        `Creating folder in specific drive completed`,
+        'OnedriveService.createFolderInSpecificDrive',
+      );
+    }
+  }
+
+  async deleteItemInSpecificDrive(driveId: string, itemId: string) {
+    try {
+      Logger.verbose(
+        `Deleting item in specific drive: ${driveId}`,
+        'OnedriveService.deleteItemInSpecificDrive',
+      );
+      const url = `${this.baseUrl}/v1.0/drives/${driveId}/items/${itemId}`;
+      return await this.requestForObject(url, 'DELETE');
+    } catch (error) {
+      Logger.error(error.response?.data, 'OnedriveService.deleteItemInSpecificDrive');
+      throw new BadRequestException(
+        'Failed to delete item in specific drive',
+        error.response?.data,
+      );
+    } finally {
+      Logger.verbose(
+        `Deleting item in specific drive completed`,
+        'OnedriveService.deleteItemInSpecificDrive',
+      );
     }
   }
 }

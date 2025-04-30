@@ -31,6 +31,10 @@ export class UploadFilesDto {
   @IsString()
   folderId: string;
 
+  @IsOptional()
+  @IsString()
+  driveId: string;
+
   @ApiProperty({ type: 'array', items: { type: 'string', format: 'binary' }, required: true })
   files: any[];
 }

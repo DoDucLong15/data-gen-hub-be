@@ -9,6 +9,8 @@ import { TemplateSpecificationService } from 'src/template-specification/templat
 import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.util';
 import { TemplateSpecificationEntity } from 'src/template-specification/entities/template-specification.entity';
 import { ClassDriveInfoService } from './sub-services/class-drive-info.service';
+import { ClassOnedriveInfoService } from './sub-services/class-onedrive-info.service';
+import { MailerService } from 'src/mailer/mailer.service';
 
 @Injectable()
 export class ClassService {
@@ -18,6 +20,8 @@ export class ClassService {
     private readonly usersService: UsersService,
     private readonly templateSpecificationService: TemplateSpecificationService,
     private readonly classDriveInfoService: ClassDriveInfoService,
+    private readonly classOnedriveInfoService: ClassOnedriveInfoService,
+    private readonly mailerService: MailerService,
   ) {}
 
   async create(request: CreateClassDto, user: UserPayload): Promise<ClassEntity> {
@@ -59,7 +63,41 @@ export class ClassService {
         await this.repository.update(newClass.id, {
           driveId: null,
         });
+        await this.mailerService
+          .sendEmail({
+            to: teacher.email,
+            subject: `Lỗi khi tạo thư mục lớp ${newClass.name} trong Google Drive`,
+            content: `
+              <p>Lỗi: ${error.message}</p>
+              <p>Vui lòng thử lại hoặc liên hệ hỗ trợ</p>
+            `,
+          })
+          .catch((error) => {
+            Logger.error(error, 'ClassService.create');
+          });
       });
+    }
+    if (request.onedriveSharedLink) {
+      this.classOnedriveInfoService
+        .create(newClass.id, request.onedriveSharedLink)
+        .catch(async (error) => {
+          Logger.error(error, 'ClassService.create');
+          await this.repository.update(newClass.id, {
+            onedriveSharedLink: null,
+          });
+          await this.mailerService
+            .sendEmail({
+              to: teacher.email,
+              subject: `Lỗi khi tạo thư mục lớp ${newClass.name} trong  OneDrive`,
+              content: `
+                <p>Lỗi: ${error.message}</p>
+                <p>Vui lòng thử lại hoặc liên hệ hỗ trợ</p>
+              `,
+            })
+            .catch((error) => {
+              Logger.error(error, 'ClassService.create');
+            });
+        });
     }
     return newClass;
   }
@@ -83,7 +121,41 @@ export class ClassService {
         await this.repository.update(_class.id, {
           driveId: _class.driveId,
         });
+        await this.mailerService
+          .sendEmail({
+            to: _class.teacher.email,
+            subject: `Lỗi khi tạo thư mục lớp ${_class.name} trong Google Drive`,
+            content: `
+              <p>Lỗi: ${error.message}</p>
+              <p>Vui lòng thử lại hoặc liên hệ hỗ trợ</p>
+            `,
+          })
+          .catch((error) => {
+            Logger.error(error, 'ClassService.update');
+          });
       });
+    }
+    if (request.onedriveSharedLink && _class.onedriveSharedLink !== request.onedriveSharedLink) {
+      this.classOnedriveInfoService
+        .create(_class.id, request.onedriveSharedLink)
+        .catch(async (error) => {
+          Logger.error(error, 'ClassService.update');
+          await this.repository.update(_class.id, {
+            onedriveSharedLink: _class.onedriveSharedLink,
+          });
+          await this.mailerService
+            .sendEmail({
+              to: _class.teacher.email,
+              subject: `Lỗi khi tạo thư mục lớp ${_class.name} trong OneDrive`,
+              content: `
+              <p>Lỗi: ${error.message}</p>
+              <p>Vui lòng thử lại hoặc liên hệ hỗ trợ</p>
+            `,
+            })
+            .catch((error) => {
+              Logger.error(error, 'ClassService.update');
+            });
+        });
     }
     return await this.repository.save({
       ..._class,

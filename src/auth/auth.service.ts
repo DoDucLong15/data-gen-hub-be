@@ -146,6 +146,8 @@ export class AuthService {
     url.searchParams.append('redirect_uri', process.env.ONEDRIVE_REDIRECT_URI || '');
     url.searchParams.append('scope', 'User.Read Files.ReadWrite.All offline_access');
     url.searchParams.append('response_mode', 'query');
+    url.searchParams.append('state', Date.now().toString());
+    url.searchParams.append('prompt', 'consent');
 
     return url.toString();
   }

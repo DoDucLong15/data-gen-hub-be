@@ -36,6 +36,10 @@ export class CreateClassDto {
   @IsOptional()
   @IsString()
   driveId: string;
+
+  @IsOptional()
+  @IsString()
+  onedriveSharedLink: string;
 }
 
 export class UpdateClassDto extends PartialType(CreateClassDto) {

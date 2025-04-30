@@ -54,14 +54,36 @@ function cleanupOldLogs() {
   }
 }
 
+// Hàm chuyển đổi bất kỳ giá trị nào thành chuỗi có thể đọc được
+function formatLogValue(value: any): string {
+  if (value === undefined) return 'undefined';
+  if (value === null) return 'null';
+
+  if (typeof value === 'object') {
+    try {
+      // Xử lý trường hợp Error object đặc biệt
+      if (value instanceof Error) {
+        return `Error: ${value.message}`;
+      }
+
+      // Chuyển đổi object thành JSON string
+      return JSON.stringify(value, null, 2);
+    } catch (err) {
+      return `[Không thể chuyển đổi object thành chuỗi: ${err.message}]`;
+    }
+  }
+
+  return String(value);
+}
+
 // Hàm ghi log vào file
 function writeToFile(level: string, message: any, context?: string, trace?: string) {
   try {
     const logFilePath = getLogFilePath();
     const timestamp = new Date().toISOString();
 
-    // Xử lý message để đảm bảo không phải undefined
-    const formattedMessage = message !== undefined ? message : 'undefined';
+    // Xử lý message với hàm formatLogValue
+    const formattedMessage = formatLogValue(message);
 
     // Xử lý context để đảm bảo không phải undefined
     const contextMessage = context ? `[${context}] ` : '';
