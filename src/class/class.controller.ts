@@ -80,13 +80,13 @@ export class ClassController {
   }
 
   @Get(':id/drive-info')
-  @CheckPolicies({ action: EAction.READ, subject: ESubject.Thesis_Drive })
+  @CheckPolicies({ action: EAction.READ, subject: ESubject.Thesis_GoogleDrive })
   async getDriveInfo(@Param('id') id: string, @User() user: UserPayload): Promise<DriveItem> {
     return await this.classDriveInfoService.getByClassId(id, user);
   }
 
   @Get(':classId/drive-info/download')
-  @CheckPolicies({ action: EAction.READ, subject: ESubject.Thesis_Drive })
+  @CheckPolicies({ action: EAction.READ, subject: ESubject.Thesis_GoogleDrive })
   async downloadDriveInfo(
     @Param('classId') classId: string,
     @Query() request: DownloadFileFromDriveDto,
@@ -104,7 +104,7 @@ export class ClassController {
       },
     }),
   )
-  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_Drive })
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_GoogleDrive })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     type: UploadFilesDto,
@@ -119,7 +119,7 @@ export class ClassController {
   }
 
   @Delete(':classId/drive-info/:fileId')
-  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_Drive })
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_GoogleDrive })
   async deleteFile(
     @Param('classId') classId: string,
     @Param('fileId') fileId: string,
@@ -129,7 +129,7 @@ export class ClassController {
   }
 
   @Post(':classId/drive-info/folders')
-  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_Drive })
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_GoogleDrive })
   async createFolder(
     @Body() body: CreateFolderDto,
     @Param('classId') classId: string,
@@ -148,7 +148,7 @@ export class ClassController {
     type: SyncClassDriveDataRequest,
     required: false,
   })
-  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_Drive })
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Thesis_GoogleDrive })
   async syncDriveInfo(
     @Body() request: SyncClassDriveDataRequest,
     @User() user: UserPayload,
