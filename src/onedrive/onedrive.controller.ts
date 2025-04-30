@@ -23,6 +23,8 @@ import { TOnedriveMe } from './types/root.type';
 import { TOnedriveChildren, TOnedriveItem, TOnedrivePreviewItem } from './types/onedrive.type';
 import { TOnedriveShareLinkInfo } from './types/share-link.type';
 import { CreateFolderInSpecificDriveDto } from './dtos/folder.dto';
+import { CheckPoliciesV2 } from 'src/authorization/decorators/check-policies-v2.decorator';
+import { PoliciesGuardV2 } from 'src/authorization/guards/policies-v2.guard';
 
 @ApiTags('Onedrive')
 @ApiBearerAuth()
@@ -169,7 +171,11 @@ export class OnedriveController {
   }
 
   @Get('specific-drive/preview')
-  @CheckPolicies({ action: EAction.READ, subject: ESubject.Onedrive })
+  @CheckPoliciesV2(
+    { action: EAction.READ, subject: ESubject.Onedrive },
+    { action: EAction.READ, subject: ESubject.Thesis_Onedrive },
+  )
+  @UseGuards(PoliciesGuardV2)
   async getPreviewItemInSpecificDrive(
     @Query('driveId') driveId: string,
     @Query('fileId') fileId: string,

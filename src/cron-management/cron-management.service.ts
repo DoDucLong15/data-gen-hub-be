@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { ClassDriveInfoService } from 'src/class/sub-services/class-drive-info.service';
+import { ClassOnedriveInfoService } from 'src/class/sub-services/class-onedrive-info.service';
 import { DriveApisService } from 'src/drive-apis/drive-apis.service';
 import { OnedriveService } from 'src/onedrive/onedrive.service';
 
@@ -15,6 +16,7 @@ export class CronManagementService {
     private readonly onedriveService: OnedriveService,
     private readonly driveApisService: DriveApisService,
     private readonly classDriveInfoService: ClassDriveInfoService,
+    private readonly classOnedriveInfoService: ClassOnedriveInfoService,
   ) {
     // Initialize job locks
     this.initJobLocks();
@@ -25,7 +27,12 @@ export class CronManagementService {
    */
   private initJobLocks(): void {
     // Pre-defined list of job names
-    const jobNames = ['refreshOnedriveAccessToken', 'healthCheckDrive', 'syncClassDriveData'];
+    const jobNames = [
+      'refreshOnedriveAccessToken',
+      'healthCheckDrive',
+      'syncClassDriveData',
+      'syncClassOnedriveData',
+    ];
 
     // Initialize all jobs as not running
     jobNames.forEach((jobName) => {
@@ -141,6 +148,22 @@ export class CronManagementService {
     });
   }
 
+  @Cron(CronExpression.EVERY_4_HOURS)
+  async syncClassOnedriveData() {
+    return this.executeWithLock('syncClassOnedriveData', async () => {
+      Logger.verbose('Starting sync class onedrive data', 'CronManagementService');
+
+      const result = await this.classOnedriveInfoService.syncClassDriveData();
+
+      Logger.verbose(
+        `Sync class onedrive data completed with status: ${result.status}`,
+        'CronManagementService',
+      );
+
+      return result;
+    });
+  }
+
   /**
    * Get the status of all cron jobs
    */
@@ -206,6 +229,11 @@ export class CronManagementService {
         case 'syncClassDriveData':
           jobFunction = async () => {
             return this.classDriveInfoService.syncClassDriveData();
+          };
+          break;
+        case 'syncClassOnedriveData':
+          jobFunction = async () => {
+            return this.classOnedriveInfoService.syncClassDriveData();
           };
           break;
         default:
