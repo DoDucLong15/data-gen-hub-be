@@ -21,6 +21,7 @@ import { UploadFileToDriveIdDto, UploadFileToMyDriveDto } from './dtos/upload.dt
 import { TOnedriveMe } from './types/root.type';
 import { TOnedriveChildren, TOnedriveItem, TOnedrivePreviewItem } from './types/onedrive.type';
 import { TOnedriveShareLinkInfo } from './types/share-link.type';
+import { CreateFolderInSpecificDriveDto } from './dtos/folder.dto';
 
 @ApiTags('Onedrive')
 @ApiBearerAuth()
@@ -83,11 +84,17 @@ export class OnedriveController {
   }
 
   @Get('shared-link/children')
+  @ApiQuery({
+    name: 'expand',
+    required: false,
+    type: Boolean,
+  })
   @CheckPolicies({ action: EAction.READ, subject: ESubject.Onedrive })
   async getChildrenFromSharedLink(
     @Query('sharedLink') sharedLink: string,
+    @Query('expand') expand: boolean,
   ): Promise<TOnedriveChildren> {
-    return await this.onedriveService.getChildrenFromSharedLink(sharedLink);
+    return await this.onedriveService.getChildrenFromSharedLink(sharedLink, expand);
   }
 
   @Get('shared-link/items')
@@ -167,5 +174,17 @@ export class OnedriveController {
     @Query('fileId') fileId: string,
   ): Promise<TOnedrivePreviewItem> {
     return await this.onedriveService.getPreviewItemInSpecificDrive(driveId, fileId);
+  }
+
+  @Post('specific-drive/folders')
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Onedrive })
+  async createFolderInSpecificDrive(
+    @Body() body: CreateFolderInSpecificDriveDto,
+  ): Promise<TOnedriveItem> {
+    return await this.onedriveService.createFolderInSpecificDrive(
+      body.driveId,
+      body.parentFolderId,
+      body.folderName,
+    );
   }
 }

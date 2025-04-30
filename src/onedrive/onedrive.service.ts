@@ -726,4 +726,39 @@ export class OnedriveService {
       );
     }
   }
+
+  async createFolderInSpecificDrive(
+    driveId: string,
+    parentFolderId: string,
+    folderName: string,
+  ): Promise<TOnedriveItem> {
+    try {
+      Logger.verbose(
+        `Creating folder in specific drive: ${driveId}`,
+        'OnedriveService.createFolderInSpecificDrive',
+      );
+      const url = `${this.baseUrl}/v1.0/drives/${driveId}/items/${parentFolderId}/children`;
+      return await this.requestForObject(
+        url,
+        'POST',
+        {},
+        {
+          name: folderName,
+          folder: {},
+          '@microsoft.graph.conflictBehavior': 'rename',
+        },
+      );
+    } catch (error) {
+      Logger.error(error.response?.data, 'OnedriveService.createFolderInSpecificDrive');
+      throw new BadRequestException(
+        'Failed to create folder in specific drive',
+        error.response?.data,
+      );
+    } finally {
+      Logger.verbose(
+        `Creating folder in specific drive completed`,
+        'OnedriveService.createFolderInSpecificDrive',
+      );
+    }
+  }
 }
