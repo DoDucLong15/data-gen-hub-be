@@ -64,3 +64,7 @@ export type TOnedrivePreviewItem = {
 export type TOnedriveChildren = TOnedriveItem & {
   children?: TOnedriveItem[];
 };
+
+export type TOnedriveHierarchy = TOnedriveItem & {
+  children?: TOnedriveHierarchy[];
+};

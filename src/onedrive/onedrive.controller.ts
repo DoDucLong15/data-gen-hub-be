@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -186,5 +187,14 @@ export class OnedriveController {
       body.parentFolderId,
       body.folderName,
     );
+  }
+
+  @Delete('specific-drive/items')
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Onedrive })
+  async deleteItemInSpecificDrive(
+    @Query('driveId') driveId: string,
+    @Query('itemId') itemId: string,
+  ) {
+    return await this.onedriveService.deleteItemInSpecificDrive(driveId, itemId);
   }
 }

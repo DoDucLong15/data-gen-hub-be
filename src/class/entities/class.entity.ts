@@ -7,6 +7,7 @@ import { AssignmentSheetsEntity } from '../../thesis-management/entities/assignm
 import { GuidanceReviewEntity } from '../../thesis-management/entities/guidance-review.entity';
 import { SupervisoryCommentsEntity } from '../../thesis-management/entities/supervisory-comments.entity';
 import { ClassDriveInfoEntity } from './drive-info.entity';
+import { ClassOnedriveInfoEntity } from './onedrive-info.entity';
 
 @Entity('classes')
 export class ClassEntity extends AbstractAuditingEntity {
@@ -67,6 +68,14 @@ export class ClassEntity extends AbstractAuditingEntity {
   })
   driveInfo: ClassDriveInfoEntity;
 
+  @OneToOne(() => ClassOnedriveInfoEntity, (onedriveInfo) => onedriveInfo.class, {
+    cascade: true,
+  })
+  onedriveInfo: ClassOnedriveInfoEntity;
+
   @Column({ type: 'varchar', name: 'drive_id', nullable: true })
   driveId: string | null;
+
+  @Column({ type: 'varchar', name: 'onedrive_shared_link', nullable: true })
+  onedriveSharedLink: string | null;
 }

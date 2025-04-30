@@ -4,12 +4,14 @@ import { SystemConfigurationService } from 'src/system-configuration/system-conf
 import {
   TOnedriveChildren,
   TOnedriveDataConnectorConfig,
+  TOnedriveHierarchy,
   TOnedriveItem,
   TOnedrivePreviewItem,
 } from './types/onedrive.type';
 import { DATA_CONNECTOR_ONEDRIVE } from 'src/auth/constants/data-connector.const';
 import { TOnedriveMe } from './types/root.type';
 import { TOnedriveShareLinkInfo } from './types/share-link.type';
+import { OnedriveHelper } from './helpers/onedrive.helper';
 
 @Injectable()
 export class OnedriveService {
@@ -285,10 +287,12 @@ export class OnedriveService {
       );
       // Return info about the file
       return {
-        fileName: downloadResponse.headers['content-disposition'],
-        fileSize: downloadResponse.headers['content-length'],
-        fileType: downloadResponse.headers['content-type'],
-        bufferLength: buffer.length,
+        originalname: OnedriveHelper.parseContentDisposition(
+          downloadResponse.headers['content-disposition'],
+        ),
+        mimetype: downloadResponse.headers['content-type'],
+        buffer: buffer,
+        size: downloadResponse.headers['content-length'],
       };
     } catch (error) {
       Logger.error(error.response?.data, 'OnedriveService.downloadFileFromSpecificDrive');
@@ -304,9 +308,12 @@ export class OnedriveService {
       );
       const dataConnectorConfig = await this.getDataConnectorConfig();
 
+      // Xử lý tên file an toàn
+      const safeFileName = OnedriveHelper.sanitizeFileNameForOneDriveUrl(fileName);
+
       // Create upload session
       const createSessionResponse = await axios.post(
-        `${this.baseUrl}/v1.0/me/drive/items/${parentFolderId}:/${fileName}:/createUploadSession`,
+        `${this.baseUrl}/v1.0/me/drive/items/${parentFolderId}:/${safeFileName}:/createUploadSession`,
         {
           item: {
             '@microsoft.graph.conflictBehavior': 'replace',
@@ -356,12 +363,15 @@ export class OnedriveService {
       );
       const dataConnectorConfig = await this.getDataConnectorConfig();
 
+      // Xử lý tên file an toàn
+      const safeFileName = OnedriveHelper.sanitizeFileNameForOneDriveUrl(fileName);
+      Logger.debug(`Safe file name: ${safeFileName}`, 'OnedriveService.uploadFileToSpecificDrive');
       // Create upload session
       const createSessionResponse = await axios.post(
-        `${this.baseUrl}/v1.0/drives/${driveId}/items/${parentFolderId}:/${fileName}:/createUploadSession`,
+        `${this.baseUrl}/v1.0/drives/${driveId}/items/${parentFolderId}:/${safeFileName}:/createUploadSession`,
         {
           item: {
-            '@microsoft.graph.conflictBehavior': 'replace', // Optional: how to handle existing files
+            '@microsoft.graph.conflictBehavior': 'replace',
           },
         },
         {
@@ -392,6 +402,65 @@ export class OnedriveService {
     } catch (error) {
       Logger.error(error.response?.data, 'OnedriveService.uploadFileToSpecificDrive');
       throw new BadRequestException('Failed to upload file', error.response?.data);
+    }
+  }
+
+  async uploadMultipleFilesToSpecificDrive(
+    driveId: string,
+    parentFolderId: string,
+    files: Array<{ buffer: Buffer; fileName: string }>,
+  ) {
+    try {
+      Logger.verbose(
+        `Bắt đầu upload ${files.length} file vào thư mục ID: ${parentFolderId}`,
+        'OnedriveService.uploadMultipleFilesToSpecificDrive',
+      );
+
+      const results = await Promise.all(
+        files.map(async (file) => {
+          try {
+            const result = await this.uploadFileToSpecificDrive(
+              driveId,
+              parentFolderId,
+              file.buffer,
+              file.fileName,
+            );
+            return {
+              success: true,
+              file: result,
+            };
+          } catch (error) {
+            Logger.error(
+              `Lỗi khi upload file ${file.fileName}: ${error.message}`,
+              'OnedriveService.uploadMultipleFilesToSpecificDrive',
+            );
+            return {
+              success: false,
+              fileName: file.fileName,
+              error: error.message || 'Unknown error',
+            };
+          }
+        }),
+      );
+
+      const successCount = results.filter((r) => r.success).length;
+      Logger.verbose(
+        `Upload hoàn tất: ${successCount}/${files.length} file thành công`,
+        'OnedriveService.uploadMultipleFilesToSpecificDrive',
+      );
+
+      return {
+        totalFiles: files.length,
+        successCount,
+        failedCount: files.length - successCount,
+        results,
+      };
+    } catch (error) {
+      Logger.error(
+        `Lỗi upload nhiều file: ${error.message}`,
+        'OnedriveService.uploadMultipleFilesToSpecificDrive',
+      );
+      throw new BadRequestException('Lỗi khi upload nhiều file', error.response?.data);
     }
   }
 
@@ -594,7 +663,7 @@ export class OnedriveService {
     sharedLink: string,
     deep: boolean = false,
     maxDepth: number = 5,
-  ) {
+  ): Promise<TOnedriveHierarchy> {
     try {
       Logger.verbose(
         `Listing files with hierarchy from shared link: ${sharedLink}, deep: ${deep}`,
@@ -605,7 +674,7 @@ export class OnedriveService {
       const rootInfo = await this.getChildrenFromSharedLink(sharedLink, false);
 
       if (!rootInfo) {
-        return {};
+        return {} as TOnedriveHierarchy;
       }
 
       // Lấy ra driveId và id của thư mục gốc
@@ -734,7 +803,7 @@ export class OnedriveService {
   ): Promise<TOnedriveItem> {
     try {
       Logger.verbose(
-        `Creating folder in specific drive: ${driveId}`,
+        `Creating folder ${folderName} in specific drive: ${driveId}`,
         'OnedriveService.createFolderInSpecificDrive',
       );
       const url = `${this.baseUrl}/v1.0/drives/${driveId}/items/${parentFolderId}/children`;
@@ -758,6 +827,28 @@ export class OnedriveService {
       Logger.verbose(
         `Creating folder in specific drive completed`,
         'OnedriveService.createFolderInSpecificDrive',
+      );
+    }
+  }
+
+  async deleteItemInSpecificDrive(driveId: string, itemId: string) {
+    try {
+      Logger.verbose(
+        `Deleting item in specific drive: ${driveId}`,
+        'OnedriveService.deleteItemInSpecificDrive',
+      );
+      const url = `${this.baseUrl}/v1.0/drives/${driveId}/items/${itemId}`;
+      return await this.requestForObject(url, 'DELETE');
+    } catch (error) {
+      Logger.error(error.response?.data, 'OnedriveService.deleteItemInSpecificDrive');
+      throw new BadRequestException(
+        'Failed to delete item in specific drive',
+        error.response?.data,
+      );
+    } finally {
+      Logger.verbose(
+        `Deleting item in specific drive completed`,
+        'OnedriveService.deleteItemInSpecificDrive',
       );
     }
   }
