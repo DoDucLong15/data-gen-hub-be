@@ -13,6 +13,7 @@ import { ListDriveItemsDto } from './dtos/drive.dto';
 import { MailerService } from 'src/mailer/mailer.service';
 import { SystemConfigUtils } from 'src/system-configuration/utils/system-config.util';
 import { Readable } from 'stream';
+import { ApplyCachingMetric } from 'src/base/decorators/caching.decorator';
 
 @Injectable()
 export class DriveApisService {
@@ -152,6 +153,7 @@ export class DriveApisService {
     return Promise.all(resultPromises);
   }
 
+  @ApplyCachingMetric(60 * 5)
   async listFiles(query: ListDriveItemsDto): Promise<DriveItem[]> {
     const { deps, driveIds: folderIds } = query;
     if (!folderIds || folderIds.length === 0) return [];
@@ -165,6 +167,7 @@ export class DriveApisService {
     return responses.flat();
   }
 
+  @ApplyCachingMetric(60 * 5)
   async getFile(fileId: string, _auth?: GoogleAuth): Promise<DriveItem> {
     try {
       Logger.verbose(`Start get file ${fileId}`, 'DriveApisService.getFile');
