@@ -12,6 +12,7 @@ import { DATA_CONNECTOR_ONEDRIVE } from 'src/auth/constants/data-connector.const
 import { TOnedriveMe } from './types/root.type';
 import { TOnedriveShareLinkInfo } from './types/share-link.type';
 import { OnedriveHelper } from './helpers/onedrive.helper';
+import { ApplyCachingMetric } from 'src/base/decorators/caching.decorator';
 
 @Injectable()
 export class OnedriveService {
@@ -659,6 +660,7 @@ export class OnedriveService {
     }
   }
 
+  @ApplyCachingMetric(60 * 5)
   async listFileSharedLinkWithHierarchy(
     sharedLink: string,
     deep: boolean = false,
@@ -771,6 +773,7 @@ export class OnedriveService {
     }
   }
 
+  @ApplyCachingMetric(60 * 60 * 24)
   async getPreviewItemInSpecificDrive(
     driveId: string,
     fileId: string,

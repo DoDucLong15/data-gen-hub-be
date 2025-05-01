@@ -28,6 +28,7 @@ import { OnedriveModule } from './onedrive/onedrive.module';
 import { CronManagementModule } from './cron-management/cron-management.module';
 import { DriveApisModule } from './drive-apis/drive-apis.module';
 import { CompressionMiddleware } from './base/middlewares/compression.middleware';
+import { RedisModule } from './base/modules/redis.module';
 
 const VALID_ENV = ['local', 'development', 'production'];
 
@@ -69,6 +70,7 @@ const environment = process.env.NODE_ENV ?? 'local';
     OnedriveModule,
     CronManagementModule,
     DriveApisModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

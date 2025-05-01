@@ -93,4 +93,8 @@ export class CommonUtils {
   ): string {
     return `data-gen-hub/${classId}/${name}/${action}/${Date.now()}_${originalName}`;
   }
+
+  static getKeyValueFromObject = (prefix = '', ...args: any[]): string => {
+    return `${prefix}::${JSON.stringify(args)}`;
+  };
 }

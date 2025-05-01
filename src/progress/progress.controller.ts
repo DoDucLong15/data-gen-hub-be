@@ -29,7 +29,7 @@ export class ProgressController {
         ...(CommonUtils.isNotEmptyArray(query.processIds) && { processId: In(query.processIds) }),
         ...(CommonUtils.isNotEmptyArray(query.classIds) && { classId: In(query.classIds) }),
         ...(CommonUtils.isNotEmptyArray(query.actions) && { action: In(query.actions) }),
-        createBy: user.email,
+        createBy: In([user.email, 'system']),
       },
       order: { createdAt: 'DESC' },
     });
