@@ -30,7 +30,11 @@ export class AuthService {
 
   async signIn(request: SignInDto): Promise<SignInResponse> {
     if (SystemConfigUtils.enableTeacherEmailCheck) {
-      if (!request.email?.endsWith('@hust.edu.vn') && request.email !== process.env.TESTER_EMAIL) {
+      if (
+        !request.email?.endsWith('@hust.edu.vn') &&
+        request.email !== process.env.TESTER_EMAIL &&
+        request.email !== process.env.EMAIL_ADMIN
+      ) {
         throw new UnauthorizedException('Only HUST teacher email is allowed');
       }
     }
