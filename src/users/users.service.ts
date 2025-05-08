@@ -67,7 +67,10 @@ export class UsersService {
           'UsersService.createUser',
         );
       });
-    return MapperUserResponse(newUser);
+    return MapperUserResponse({
+      ...newUser,
+      roleName: role.name,
+    });
   }
 
   async updateUserInfo(
