@@ -106,7 +106,7 @@ export class CronManagementService {
     }
   }
 
-  @Cron(CronExpression.EVERY_30_MINUTES)
+  @Cron(CronExpression.EVERY_30_MINUTES, { utcOffset: 7 })
   async refreshOnedriveAccessToken() {
     return this.executeWithLock('refreshOnedriveAccessToken', async () => {
       Logger.verbose('Health check onedrive access token', 'CronManagementService');
@@ -119,7 +119,7 @@ export class CronManagementService {
     });
   }
 
-  @Cron(CronExpression.EVERY_12_HOURS)
+  @Cron(CronExpression.EVERY_12_HOURS, { utcOffset: 7 })
   async healthCheckDrive() {
     return this.executeWithLock('healthCheckDrive', async () => {
       Logger.verbose('Health check drive access token', 'CronManagementService');
@@ -132,7 +132,7 @@ export class CronManagementService {
     });
   }
 
-  @Cron(CronExpression.EVERY_4_HOURS)
+  @Cron(CronExpression.EVERY_4_HOURS, { utcOffset: 7 })
   async syncClassDriveData() {
     return this.executeWithLock('syncClassDriveData', async () => {
       Logger.verbose('Starting sync class drive data', 'CronManagementService');
@@ -148,7 +148,7 @@ export class CronManagementService {
     });
   }
 
-  @Cron(CronExpression.EVERY_4_HOURS)
+  @Cron(CronExpression.EVERY_4_HOURS, { utcOffset: 7 })
   async syncClassOnedriveData() {
     return this.executeWithLock('syncClassOnedriveData', async () => {
       Logger.verbose('Starting sync class onedrive data', 'CronManagementService');
