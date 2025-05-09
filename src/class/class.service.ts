@@ -111,7 +111,12 @@ export class ClassService {
   }
 
   async update(request: UpdateClassDto, user: UserPayload): Promise<ClassEntity> {
-    const _class = await this.getOne({ where: { id: request.id, teacher: { email: user.email } } });
+    const _class = await this.getOne({
+      where: { id: request.id, teacher: { email: user.email } },
+      relations: {
+        teacher: true,
+      },
+    });
     if (!_class) {
       throw new BadRequestException(`Class with id ${request.id} not found`);
     }
@@ -123,7 +128,7 @@ export class ClassService {
         });
         await this.mailerService
           .sendEmail({
-            to: _class.teacher.email,
+            to: _class.teacher?.email,
             subject: `Lỗi khi tạo thư mục lớp ${_class.name} trong Google Drive`,
             content: `
               <p>Lỗi: ${error.message}</p>
@@ -145,7 +150,7 @@ export class ClassService {
           });
           await this.mailerService
             .sendEmail({
-              to: _class.teacher.email,
+              to: _class.teacher?.email,
               subject: `Lỗi khi tạo thư mục lớp ${_class.name} trong OneDrive`,
               content: `
               <p>Lỗi: ${error.message}</p>
