@@ -637,7 +637,7 @@ describe('ExcelStrategy', () => {
       };
       const template = {
         config: {
-          nameFormat: ['Report-', '?id', '-', '?name', '.xlsx'],
+          nameformat: ['Report-', '?id', '-', '?name', '.xlsx'],
         },
         sheets: [
           {

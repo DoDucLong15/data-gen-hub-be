@@ -11,6 +11,7 @@ import { PoliciesGuard } from 'src/authorization/guards/policies.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { ESyncDriveDataType } from './enums/sync-data.type';
 import { ProgressService } from 'src/progress/progress.service';
+import { ClassOnedriveInfoService } from './sub-services/class-onedrive-info.service';
 
 // Mock ProgressService.generateId
 jest.mock('src/progress/progress.service', () => ({
@@ -23,6 +24,7 @@ describe('ClassController', () => {
   let controller: ClassController;
   let classService: ClassService;
   let classDriveInfoService: ClassDriveInfoService;
+  let classOnedriveInfoService: ClassOnedriveInfoService;
 
   // Mock data
   const mockUserPayload: UserPayload = {
@@ -37,6 +39,7 @@ describe('ClassController', () => {
     semester: '2023-2024-2',
     studentPaths: [],
     driveId: '',
+    onedriveSharedLink: '',
   };
 
   const mockCreateClassWithDriveDto: CreateClassDto = {
@@ -119,6 +122,12 @@ describe('ClassController', () => {
           provide: APP_GUARD,
           useClass: PoliciesGuard,
         },
+        {
+          provide: ClassOnedriveInfoService,
+          useValue: {
+            create: jest.fn(),
+          },
+        },
       ],
     })
       .overrideGuard(PoliciesGuard)
@@ -128,7 +137,7 @@ describe('ClassController', () => {
     controller = module.get<ClassController>(ClassController);
     classService = module.get<ClassService>(ClassService);
     classDriveInfoService = module.get<ClassDriveInfoService>(ClassDriveInfoService);
-
+    classOnedriveInfoService = module.get<ClassOnedriveInfoService>(ClassOnedriveInfoService);
     // Clear all mocks before each test
     jest.clearAllMocks();
   });

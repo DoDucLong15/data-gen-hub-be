@@ -8,6 +8,9 @@ const api_documentation_credentials = {
 };
 
 export function setupSwagger(app: INestApplication): INestApplication {
+  // Chỉ config sub path qua environment variable
+  const apiPrefix = process.env.API_PREFIX || ''; // Default là empty, production set thành '/apis'
+
   const config = new DocumentBuilder()
     .setTitle('Swagger Api')
     .setDescription('## API Document')
@@ -15,10 +18,38 @@ export function setupSwagger(app: INestApplication): INestApplication {
     .addTag('Default')
     .addBearerAuth()
     .addSecurity('token', { type: 'http', scheme: 'bearer' })
+    .addServer(apiPrefix || '/', apiPrefix ? `Current Domain + ${apiPrefix}` : 'Current Domain')
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
 
   const http_adapter = app.getHttpAdapter();
+
+  // Dynamic server detection middleware
+  http_adapter.use('/api-docs', (req: Request, res: Response, next: NextFunction) => {
+    // Auto-detect base URL from current request
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+    const host = req.headers['x-forwarded-host'] || req.get('host');
+    const currentBaseUrl = `${protocol}://${host}`;
+
+    // Inject dynamic server vào Swagger document
+    if (req.url === '/api-docs/swagger.json' || req.url === '/api-docs-json') {
+      const dynamicDocument = {
+        ...document,
+        servers: [
+          {
+            url: apiPrefix ? `${currentBaseUrl}${apiPrefix}` : currentBaseUrl,
+            description: 'Current Environment',
+          },
+        ],
+      };
+      res.setHeader('Content-Type', 'application/json');
+      return res.send(JSON.stringify(dynamicDocument, null, 2));
+    }
+
+    next();
+  });
+
   http_adapter.use('/api-docs', (req: Request, res: Response, next: NextFunction) => {
     function parseAuthHeader(input: string): { name: string; pass: string } {
       const [, encodedPart] = input.split(' ');

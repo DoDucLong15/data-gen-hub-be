@@ -5,6 +5,7 @@ import { UserEntity } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { RolesService } from '../roles/roles.service';
 import { MailerService } from '../mailer/mailer.service';
+import { StorageService } from '../storage/storage.service';
 import { BadRequestException, Logger } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto } from './dtos/user.dto';
 import { RoleEnity } from '../roles/entities/role.entity';
@@ -22,6 +23,7 @@ describe('UsersService', () => {
   let userRepository: Repository<UserEntity>;
   let roleService: RolesService;
   let mailerService: MailerService;
+  let storageService: StorageService;
 
   // Mock data
   const mockRole = {
@@ -45,6 +47,7 @@ describe('UsersService', () => {
     position: 'Test Position',
     role: mockRole,
     roleName: 'teacher',
+    avatar: null,
   } as UserEntity;
 
   const mockCreateUserDto: CreateUserDto = {
@@ -86,6 +89,13 @@ describe('UsersService', () => {
             sendEmail: jest.fn().mockResolvedValue({} as any),
           },
         },
+        {
+          provide: StorageService,
+          useValue: {
+            uploadDataToFile: jest.fn(),
+            deleteFile: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -93,6 +103,7 @@ describe('UsersService', () => {
     userRepository = module.get<Repository<UserEntity>>(getRepositoryToken(UserEntity));
     roleService = module.get<RolesService>(RolesService);
     mailerService = module.get<MailerService>(MailerService);
+    storageService = module.get<StorageService>(StorageService);
 
     // Mock Logger to prevent console output during tests
     jest.spyOn(Logger, 'verbose').mockImplementation(() => undefined);
@@ -153,6 +164,7 @@ describe('UsersService', () => {
         position: mockUser.position,
         role: mockUser.roleName,
         roleId: mockUser.role.id,
+        avatar: null,
         createdAt: mockUser.createdAt,
         updatedAt: mockUser.updatedAt,
         deletedAt: mockUser.deletedAt,
@@ -277,6 +289,7 @@ describe('UsersService', () => {
         position: mockUser.position,
         role: mockUser.roleName,
         roleId: mockUser.role.id,
+        avatar: null,
         createdAt: mockUser.createdAt,
         updatedAt: mockUser.updatedAt,
         deletedAt: mockUser.deletedAt,
@@ -310,6 +323,9 @@ describe('UsersService', () => {
       roleName: 'teacher',
     };
 
+    // Mock file for testing
+    const mockFile = undefined as unknown as Express.Multer.File;
+
     // Kịch bản 1: Cập nhật thành công dữ liệu người dùng
     it('should successfully update user info when user updates their own info', async () => {
       // Arrange
@@ -324,7 +340,7 @@ describe('UsersService', () => {
       jest.spyOn(userRepository, 'save').mockResolvedValue(mockUpdatedUser as UserEntity);
 
       // Act
-      const result = await service.updateUserInfo(mockUpdateDto, mockUserPayload);
+      const result = await service.updateUserInfo(mockUpdateDto, mockUserPayload, mockFile);
 
       // Assert
       expect(service.createPrincipalAbility).toHaveBeenCalledWith(mockUserPayload.email);
@@ -367,7 +383,7 @@ describe('UsersService', () => {
       jest.spyOn(userRepository, 'save').mockResolvedValue(mockUpdatedUser as UserEntity);
 
       // Act
-      const result = await service.updateUserInfo(mockUpdateDto, adminPayload);
+      const result = await service.updateUserInfo(mockUpdateDto, adminPayload, mockFile);
 
       // Assert
       expect(service.createPrincipalAbility).toHaveBeenCalledWith(adminPayload.email);
@@ -391,9 +407,9 @@ describe('UsersService', () => {
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.updateUserInfo(mockUpdateDto, mockUserPayload)).rejects.toThrow(
-        new BadRequestException(`User ${mockUpdateDto.id} not found`),
-      );
+      await expect(
+        service.updateUserInfo(mockUpdateDto, mockUserPayload, mockFile),
+      ).rejects.toThrow(new BadRequestException(`User ${mockUpdateDto.id} not found`));
       expect(userRepository.save).not.toHaveBeenCalled();
     });
 
@@ -415,9 +431,9 @@ describe('UsersService', () => {
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
 
       // Act & Assert
-      await expect(service.updateUserInfo(mockUpdateDto, otherUserPayload)).rejects.toThrow(
-        new BadRequestException(`You can't update this user`),
-      );
+      await expect(
+        service.updateUserInfo(mockUpdateDto, otherUserPayload, mockFile),
+      ).rejects.toThrow(new BadRequestException(`You can't update this user`));
       expect(userRepository.save).not.toHaveBeenCalled();
     });
 
@@ -453,7 +469,7 @@ describe('UsersService', () => {
       jest.spyOn(userRepository, 'save').mockResolvedValue(mockUpdatedUserWithRole as UserEntity);
 
       // Act
-      const result = await service.updateUserInfo(updateWithRoleDto, mockUserPayload);
+      const result = await service.updateUserInfo(updateWithRoleDto, mockUserPayload, mockFile);
 
       // Assert
       expect(roleService.getRoleById).toHaveBeenCalledWith(updateWithRoleDto.roleId);
@@ -492,9 +508,9 @@ describe('UsersService', () => {
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(userWithRole);
 
       // Act & Assert
-      await expect(service.updateUserInfo(updateWithRoleDto, mockUserPayload)).rejects.toThrow(
-        new BadRequestException(`You can't update role`),
-      );
+      await expect(
+        service.updateUserInfo(updateWithRoleDto, mockUserPayload, mockFile),
+      ).rejects.toThrow(new BadRequestException(`You can't update role`));
       expect(roleService.getRoleById).not.toHaveBeenCalled();
       expect(userRepository.save).not.toHaveBeenCalled();
     });
@@ -524,7 +540,7 @@ describe('UsersService', () => {
       jest.spyOn(userRepository, 'save').mockResolvedValue(mockUpdatedUserWithEmail as UserEntity);
 
       // Act
-      const result = await service.updateUserInfo(updateWithEmailDto, mockUserPayload);
+      const result = await service.updateUserInfo(updateWithEmailDto, mockUserPayload, mockFile);
 
       // Assert
       expect(userRepository.save).toHaveBeenCalledWith(
@@ -582,9 +598,9 @@ describe('UsersService', () => {
       });
 
       // Act & Assert
-      await expect(service.updateUserInfo(updateWithEmailDto, selfUserPayload)).rejects.toThrow(
-        new BadRequestException(`You can't update email`),
-      );
+      await expect(
+        service.updateUserInfo(updateWithEmailDto, selfUserPayload, mockFile),
+      ).rejects.toThrow(new BadRequestException(`You can't update email`));
       expect(userRepository.save).not.toHaveBeenCalled();
     });
 
@@ -602,9 +618,9 @@ describe('UsersService', () => {
       jest.spyOn(roleService, 'getRoleById').mockResolvedValue(null as unknown as RoleEnity);
 
       // Act & Assert
-      await expect(service.updateUserInfo(updateWithRoleDto, mockUserPayload)).rejects.toThrow(
-        new BadRequestException(`Role ${updateWithRoleDto.roleId} not found`),
-      );
+      await expect(
+        service.updateUserInfo(updateWithRoleDto, mockUserPayload, mockFile),
+      ).rejects.toThrow(new BadRequestException(`Role ${updateWithRoleDto.roleId} not found`));
       expect(userRepository.save).not.toHaveBeenCalled();
     });
   });

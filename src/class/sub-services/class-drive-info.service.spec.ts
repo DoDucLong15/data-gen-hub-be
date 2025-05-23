@@ -171,6 +171,7 @@ describe('ClassDriveInfoService', () => {
     updatedAt: new Date(),
     deletedAt: null as unknown as Date,
     class: {} as any,
+    lastSync: new Date().toISOString(),
   };
 
   beforeEach(async () => {
@@ -334,6 +335,7 @@ describe('ClassDriveInfoService', () => {
       expect(processStudentListSpy).toHaveBeenCalledWith(
         mockClassDriveInfoWithClass,
         expect.objectContaining({ email: mockUser.email }),
+        expect.any(String),
       );
 
       expect(processFormDataSpy).toHaveBeenCalledTimes(3);
@@ -343,6 +345,7 @@ describe('ClassDriveInfoService', () => {
         'assignmentSheets',
         ThesisDocumentEnum.ASSIGNMENT_SHEET,
         ESyncDriveDataType.ASSIGNMENT_SHEET,
+        expect.any(String),
       );
       expect(processFormDataSpy).toHaveBeenCalledWith(
         mockClassDriveInfoWithClass,
@@ -350,6 +353,7 @@ describe('ClassDriveInfoService', () => {
         'guidanceReviews',
         ThesisDocumentEnum.GUIDANCE_REVIEW,
         ESyncDriveDataType.GUIDANCE_REVIEW,
+        expect.any(String),
       );
       expect(processFormDataSpy).toHaveBeenCalledWith(
         mockClassDriveInfoWithClass,
@@ -357,6 +361,7 @@ describe('ClassDriveInfoService', () => {
         'supervisoryComments',
         ThesisDocumentEnum.SUPERVISORY_COMMENTS,
         ESyncDriveDataType.SUPERVISORY_COMMENTS,
+        expect.any(String),
       );
 
       expect(progressService.makeCompleted).toHaveBeenCalledWith(

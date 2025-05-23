@@ -13,6 +13,8 @@ import { UserEntity } from '../users/entities/user.entity';
 import { SystemConfigUtils } from '../system-configuration/utils/system-config.util';
 import { TemplateSpecificationEntity } from '../template-specification/entities/template-specification.entity';
 import { ClassDriveInfoEntity } from './entities/drive-info.entity';
+import { ClassOnedriveInfoService } from './sub-services/class-onedrive-info.service';
+import { MailerService } from 'src/mailer/mailer.service';
 
 describe('ClassService', () => {
   let service: ClassService;
@@ -20,6 +22,8 @@ describe('ClassService', () => {
   let usersService: UsersService;
   let templateSpecificationService: TemplateSpecificationService;
   let classDriveInfoService: ClassDriveInfoService;
+  let classOnedriveInfoService: ClassOnedriveInfoService;
+  let mailerService: MailerService;
 
   // Mock data
   const mockUser = {
@@ -39,7 +43,8 @@ describe('ClassService', () => {
     courseCode: 'CS101',
     semester: '2023-2024-2',
     studentPaths: [],
-    driveId: '', // Empty string to satisfy the type
+    driveId: '', // Empty string to satisfy the typez
+    onedriveSharedLink: '',
   };
 
   const mockCreateClassWithDriveDto: CreateClassDto = {
@@ -91,6 +96,18 @@ describe('ClassService', () => {
             create: jest.fn().mockImplementation(() => Promise.resolve({})),
           },
         },
+        {
+          provide: ClassOnedriveInfoService,
+          useValue: {
+            create: jest.fn().mockImplementation(() => Promise.resolve({})),
+          },
+        },
+        {
+          provide: MailerService,
+          useValue: {
+            sendEmail: jest.fn().mockImplementation(() => Promise.resolve({})),
+          },
+        },
       ],
     }).compile();
 
@@ -101,7 +118,8 @@ describe('ClassService', () => {
       TemplateSpecificationService,
     );
     classDriveInfoService = module.get<ClassDriveInfoService>(ClassDriveInfoService);
-
+    classOnedriveInfoService = module.get<ClassOnedriveInfoService>(ClassOnedriveInfoService);
+    mailerService = module.get<MailerService>(MailerService);
     // Mock Logger to prevent console output during tests
     jest.spyOn(Logger, 'verbose').mockImplementation(() => undefined);
     jest.spyOn(Logger, 'error').mockImplementation(() => undefined);
@@ -356,6 +374,7 @@ describe('ClassService', () => {
       // Assert
       expect(repository.findOne).toHaveBeenCalledWith({
         where: { id: mockUpdateClassDto.id, teacher: { email: mockUserPayload.email } },
+        relations: { teacher: true },
       });
       expect(repository.save).toHaveBeenCalledWith({
         ...mockClassEntity,
@@ -395,6 +414,7 @@ describe('ClassService', () => {
       // Assert
       expect(repository.findOne).toHaveBeenCalledWith({
         where: { id: mockUpdateClassWithDriveDto.id, teacher: { email: mockUserPayload.email } },
+        relations: { teacher: true },
       });
       expect(classDriveInfoService.create).toHaveBeenCalledWith(
         classWithoutDriveId.id,
@@ -419,6 +439,7 @@ describe('ClassService', () => {
 
       expect(repository.findOne).toHaveBeenCalledWith({
         where: { id: mockUpdateClassDto.id, teacher: { email: mockUserPayload.email } },
+        relations: { teacher: true },
       });
       expect(repository.save).not.toHaveBeenCalled();
       expect(classDriveInfoService.create).not.toHaveBeenCalled();
@@ -457,6 +478,7 @@ describe('ClassService', () => {
       // Assert
       expect(repository.findOne).toHaveBeenCalledWith({
         where: { id: mockUpdateClassWithDriveDto.id, teacher: { email: mockUserPayload.email } },
+        relations: { teacher: true },
       });
       expect(classDriveInfoService.create).toHaveBeenCalledWith(
         classWithExistingDriveId.id,

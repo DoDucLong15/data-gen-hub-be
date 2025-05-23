@@ -29,6 +29,7 @@ describe('UsersController', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null as unknown as Date, // Handle null case for deleted users
+    avatar: null,
     permissions: [
       {
         action: 'read',
@@ -192,16 +193,23 @@ describe('UsersController', () => {
       role: 'Admin',
     };
 
+    // Mock file for testing
+    const mockFile = undefined as unknown as Express.Multer.File;
+
     // Scenario 1: Successfully update user info
     it('should successfully update user info', async () => {
       // Arrange
       jest.spyOn(usersService, 'updateUserInfo').mockResolvedValueOnce(mockUpdatedUserResponse);
 
       // Act
-      const result = await controller.updateUser(mockUpdateUserDto, mockAdminPayload);
+      const result = await controller.updateUser(mockUpdateUserDto, mockAdminPayload, mockFile);
 
       // Assert
-      expect(usersService.updateUserInfo).toHaveBeenCalledWith(mockUpdateUserDto, mockAdminPayload);
+      expect(usersService.updateUserInfo).toHaveBeenCalledWith(
+        mockUpdateUserDto,
+        mockAdminPayload,
+        mockFile,
+      );
       expect(result).toEqual(mockUpdatedUserResponse);
     });
 
@@ -214,10 +222,14 @@ describe('UsersController', () => {
       jest.spyOn(usersService, 'updateUserInfo').mockRejectedValue(badRequestException);
 
       // Act & Assert
-      await expect(controller.updateUser(mockUpdateUserDto, mockAdminPayload)).rejects.toThrow(
-        BadRequestException,
+      await expect(
+        controller.updateUser(mockUpdateUserDto, mockAdminPayload, mockFile),
+      ).rejects.toThrow(BadRequestException);
+      expect(usersService.updateUserInfo).toHaveBeenCalledWith(
+        mockUpdateUserDto,
+        mockAdminPayload,
+        mockFile,
       );
-      expect(usersService.updateUserInfo).toHaveBeenCalledWith(mockUpdateUserDto, mockAdminPayload);
     });
 
     // Scenario 3: User updates own profile
@@ -226,10 +238,14 @@ describe('UsersController', () => {
       jest.spyOn(usersService, 'updateUserInfo').mockResolvedValueOnce(mockUpdatedUserResponse);
 
       // Act
-      const result = await controller.updateUser(mockUpdateUserDto, mockUserPayload);
+      const result = await controller.updateUser(mockUpdateUserDto, mockUserPayload, mockFile);
 
       // Assert
-      expect(usersService.updateUserInfo).toHaveBeenCalledWith(mockUpdateUserDto, mockUserPayload);
+      expect(usersService.updateUserInfo).toHaveBeenCalledWith(
+        mockUpdateUserDto,
+        mockUserPayload,
+        mockFile,
+      );
       expect(result).toEqual(mockUpdatedUserResponse);
     });
 
@@ -248,11 +264,12 @@ describe('UsersController', () => {
 
       // Act & Assert
       await expect(
-        controller.updateUser(mockUpdateUserDto, unauthorizedUserPayload),
+        controller.updateUser(mockUpdateUserDto, unauthorizedUserPayload, mockFile),
       ).rejects.toThrow(BadRequestException);
       expect(usersService.updateUserInfo).toHaveBeenCalledWith(
         mockUpdateUserDto,
         unauthorizedUserPayload,
+        mockFile,
       );
     });
 
@@ -273,10 +290,14 @@ describe('UsersController', () => {
       jest.spyOn(usersService, 'updateUserInfo').mockResolvedValueOnce(updatedWithRoleResponse);
 
       // Act
-      const result = await controller.updateUser(updateWithRoleDto, mockAdminPayload);
+      const result = await controller.updateUser(updateWithRoleDto, mockAdminPayload, mockFile);
 
       // Assert
-      expect(usersService.updateUserInfo).toHaveBeenCalledWith(updateWithRoleDto, mockAdminPayload);
+      expect(usersService.updateUserInfo).toHaveBeenCalledWith(
+        updateWithRoleDto,
+        mockAdminPayload,
+        mockFile,
+      );
       expect(result).toEqual(updatedWithRoleResponse);
     });
 
@@ -296,12 +317,13 @@ describe('UsersController', () => {
       jest.spyOn(usersService, 'updateUserInfo').mockResolvedValueOnce(updatedWithEmailResponse);
 
       // Act
-      const result = await controller.updateUser(updateWithEmailDto, mockAdminPayload);
+      const result = await controller.updateUser(updateWithEmailDto, mockAdminPayload, mockFile);
 
       // Assert
       expect(usersService.updateUserInfo).toHaveBeenCalledWith(
         updateWithEmailDto,
         mockAdminPayload,
+        mockFile,
       );
       expect(result).toEqual(updatedWithEmailResponse);
     });

@@ -195,6 +195,13 @@ describe('DriveApisService', () => {
           provide: MailerService,
           useValue: mockMailerService,
         },
+        {
+          provide: 'REDIS_CLIENT',
+          useValue: {
+            get: jest.fn(),
+            set: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
