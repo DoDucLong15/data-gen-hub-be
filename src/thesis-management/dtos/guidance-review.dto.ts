@@ -63,11 +63,15 @@ export class CreateGuidanceReviewDto {
 
   @IsOptional()
   @IsNumber()
-  responseAccuracyPoint: number; // Tính hợp lý, đúng đắn và đầy đủ khi trả lời câu hỏi trong phiên phản biện
+  responsibilityAttitudePoint: number; // Tinh thần trách nhiệm, thái độ nghiêm túc
 
   @IsOptional()
   @IsNumber()
-  presentationSkillsPoint: number; // Kỹ năng trình bày, demo sản phẩm làm nổi bật được kết quả
+  techMasteryPoint: number; // Khả năng làm chủ kiến thức, công nghệ
+
+  @IsOptional()
+  @IsNumber()
+  proactivenessPoint: number; // Sự chủ động, sáng tạo, chấp nhận thách thức trong công việc
 
   @IsOptional()
   @IsNumber()
