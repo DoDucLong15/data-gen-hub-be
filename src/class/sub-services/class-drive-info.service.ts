@@ -384,6 +384,7 @@ export class ClassDriveInfoService {
   ): Promise<BaseResponse> {
     const processId = generateProcessId ?? ProgressService.generateId('sync-class-drive-data-cron');
     const errorCollector: Record<string, any> = {};
+    const config: any = {};
     try {
       Logger.log('Starting sync class drive data', 'ClassDriveInfoService.SyncClassDriveData');
 
@@ -424,6 +425,7 @@ export class ClassDriveInfoService {
 
       // Process each drive info
       for (const driveInfo of existings) {
+        config[driveInfo.classId] = true;
         const lastSync = driveInfo.lastSync;
         const userInfo = user ?? {
           email: driveInfo.class.teacher.email,
@@ -491,7 +493,7 @@ export class ClassDriveInfoService {
         await this.classDriveInfoRepository.save(driveInfo);
       }
 
-      await this.progressService.makeCompleted({ processId }, { error: errorCollector });
+      await this.progressService.makeCompleted({ processId }, { error: errorCollector, config });
 
       return {
         status: 'success',
@@ -509,6 +511,7 @@ export class ClassDriveInfoService {
         { processId },
         {
           error: errorCollector,
+          config,
         },
       );
       return {
