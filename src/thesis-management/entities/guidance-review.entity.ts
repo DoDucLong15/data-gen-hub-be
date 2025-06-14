@@ -52,11 +52,14 @@ export class GuidanceReviewEntity extends AbstractAuditingEntity {
   @Column({ type: 'float', name: 'literature_review_point', nullable: true })
   reliabilityAndReferencesPoint: number; // "Mức độ tin cậy về nội dung (có đầy đủ tài liệu tham khảo và tham chiếu tới tài liệu)"
 
-  @Column({ type: 'float', name: 'response_accuracy_point', nullable: true })
-  responseAccuracyPoint: number; // Tính hợp lý, đúng đắn và đầy đủ khi trả lời câu hỏi trong phiên phản biện
+  @Column({ type: 'float', name: 'responsibility_attitude_point', nullable: true })
+  responsibilityAttitudePoint: number; // Tinh thần trách nhiệm, thái độ nghiêm túc
 
-  @Column({ type: 'float', name: 'presentation_skills_point', nullable: true })
-  presentationSkillsPoint: number; // Kỹ năng trình bày, demo sản phẩm làm nổi bật được kết quả
+  @Column({ type: 'float', name: 'tech_mastery_point', nullable: true })
+  techMasteryPoint: number; // Khả năng làm chủ kiến thức, công nghệ
+
+  @Column({ type: 'float', name: 'proactiveness_point', nullable: true })
+  proactivenessPoint: number; // Sự chủ động, sáng tạo, chấp nhận thách thức trong công việc
 
   @Column({ type: 'float', name: 'reward_point', nullable: true })
   rewardPoint: number; // Điểm thưởng
