@@ -7,6 +7,8 @@ import {
   Param,
   Patch,
   Post,
+  Query,
+  Res,
   UploadedFile,
   UploadedFiles,
   UseGuards,
@@ -18,6 +20,7 @@ import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
 import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import {
   CreateTemplateSpecificationDto,
+  DownloadDefaultTemplate,
   UpdateTemplateSpecificationDto,
 } from './dtos/template-specification.dto';
 import { User } from 'src/auth/decorators/user.decorator';
@@ -27,6 +30,7 @@ import { PoliciesGuard } from 'src/authorization/guards/policies.guard';
 import { ESubject } from 'src/authorization/enums/subject.enum';
 import { CheckPolicies } from 'src/authorization/decorators/check-policies.decorator';
 import { EAction } from 'src/permissions/enums/action.enum';
+import { Response } from 'express';
 
 @ApiTags('Template Specification')
 @ApiBearerAuth()
@@ -120,5 +124,14 @@ export class TemplateSpecificationController {
     @Param('classId') classId: string,
   ): Promise<TemplateSpecificationEntity[]> {
     return await this.templateSpecificationService.list(classId, user);
+  }
+
+  @Get('default/download')
+  @CheckPolicies({ action: EAction.MANAGE, subject: ESubject.Classes })
+  async downloadDefaultTemplate(
+    @Query() request: DownloadDefaultTemplate,
+    @Res() res: Response,
+  ): Promise<void> {
+    return await this.templateSpecificationService.downloadDefaultTemplate(request, res);
   }
 }
