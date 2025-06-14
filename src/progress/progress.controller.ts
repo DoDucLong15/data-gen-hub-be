@@ -22,15 +22,31 @@ export class ProgressController {
   @Get()
   @CheckPolicies({ action: EAction.READ, subject: ESubject.Progress })
   async getNotificationProgress(@Query() query: GetProgressDto, @User() user: UserPayload) {
+    let whereCondition: any = {
+      ...(CommonUtils.isNotEmptyArray(query.types) && { type: In(query.types) }),
+      ...(CommonUtils.isNotEmptyArray(query.statuses) && { status: In(query.statuses) }),
+      ...(CommonUtils.isNotEmptyArray(query.processIds) && { processId: In(query.processIds) }),
+      ...(CommonUtils.isNotEmptyArray(query.actions) && { action: In(query.actions) }),
+      createBy: In([user.email, 'system']),
+    };
+
+    if (CommonUtils.isNotEmptyArray(query.classIds)) {
+      whereCondition = [
+        {
+          ...whereCondition,
+          classId: In(query.classIds),
+        },
+        ...query.classIds.map((classId) => ({
+          ...whereCondition,
+          config: {
+            [classId]: true,
+          },
+        })),
+      ];
+    }
+
     return await this.progressService.getMany({
-      where: {
-        ...(CommonUtils.isNotEmptyArray(query.types) && { type: In(query.types) }),
-        ...(CommonUtils.isNotEmptyArray(query.statuses) && { status: In(query.statuses) }),
-        ...(CommonUtils.isNotEmptyArray(query.processIds) && { processId: In(query.processIds) }),
-        ...(CommonUtils.isNotEmptyArray(query.classIds) && { classId: In(query.classIds) }),
-        ...(CommonUtils.isNotEmptyArray(query.actions) && { action: In(query.actions) }),
-        createBy: In([user.email, 'system']),
-      },
+      where: whereCondition,
       order: { createdAt: 'DESC' },
     });
   }

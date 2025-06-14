@@ -24,4 +24,10 @@ export class ProgressEntity extends AbstractAuditingEntity {
 
   @Column({ type: 'varchar', name: 'class_id', nullable: true })
   classId: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  config: any;
+
+  @Column({ type: 'jsonb', nullable: true })
+  logs: any;
 }

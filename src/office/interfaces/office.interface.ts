@@ -23,12 +23,18 @@ export interface OfficeStrategy {
   ): Promise<T>;
 
   // Script
-  importListByScript(inputPath: string, specificationPath: string, classId: string): Promise<void>;
+  importListByScript(
+    inputPath: string,
+    specificationPath: string,
+    classId: string,
+    processId?: string,
+  ): Promise<void>;
   exportListByScript(
     classId: string,
     studentIds: string[],
     templatePath: string,
     specificationPath: string,
+    processId?: string,
   ): Promise<void>;
   exportSingleByScript(
     classId: string,
@@ -37,10 +43,12 @@ export interface OfficeStrategy {
     specificationPath: string,
     thesisType: ThesisDocumentEnum,
     extraData?: any,
+    processId?: string,
   ): Promise<void>;
   importSingleByScript(
     inputPath: string,
     specificationPath: string,
     classId: string,
+    processId?: string,
   ): Promise<void>;
 }
