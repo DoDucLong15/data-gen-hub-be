@@ -104,6 +104,7 @@ export class StudentServiceV2 {
               inputPath,
               specification.jsonFile,
               request.classId,
+              progressId,
             );
             inputPaths.push(inputPath);
           }
@@ -198,6 +199,7 @@ export class StudentServiceV2 {
         request.studentIds,
         specification.templateFile,
         specification.jsonFile,
+        progressId,
       );
       const fileOutputPath = await this.classService
         .getOne({ where: { id: request.classId } })
@@ -300,6 +302,7 @@ export class StudentServiceV2 {
           thesis_end_date: request.thesisEndDate,
           teacher_sign_date: request.teacherSignatureDate,
         },
+        progressId,
       );
       await this.processService.makeCompleted({ processId: progressId }, { error: errorCollector });
       return {
@@ -395,6 +398,7 @@ export class StudentServiceV2 {
               res.key,
               specification.jsonFile,
               request.classId,
+              progressId,
             );
           }
         } catch (error) {

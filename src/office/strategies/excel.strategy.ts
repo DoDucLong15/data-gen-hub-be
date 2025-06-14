@@ -411,20 +411,18 @@ export class ExcelStrategy implements OfficeStrategy {
     inputPath: string,
     specificationPath: string,
     classId: string,
+    processId?: string,
   ): Promise<void> {
     try {
       Logger.verbose(
         `Importing list by script with input ${inputPath} and specification ${specificationPath}`,
         'ExcelStrategy.importListByScript',
       );
-      const output = await this.pythonScriptService.runPythonScript(OfficePathScript.LIST_TO_DB, [
-        '-s',
-        specificationPath,
-        '-t',
-        inputPath,
-        '-c',
-        classId,
-      ]);
+      const output = await this.pythonScriptService.runPythonScript(
+        OfficePathScript.LIST_TO_DB,
+        ['-s', specificationPath, '-t', inputPath, '-c', classId],
+        processId,
+      );
       Logger.verbose(output, 'ExcelStrategy.importListByScript');
     } catch (error) {
       throw new Error(`Error importing list by script: ${error.message}`);
@@ -435,23 +433,28 @@ export class ExcelStrategy implements OfficeStrategy {
     studentIds: string[],
     templatePath: string,
     specificationPath: string,
+    processId?: string,
   ): Promise<void> {
     try {
       Logger.verbose(
         `Exporting list by script with template ${templatePath} and specification ${specificationPath}`,
         'ExcelStrategy.exportListByScript',
       );
-      const output = await this.pythonScriptService.runPythonScript(OfficePathScript.DB_TO_LIST, [
-        '-s',
-        specificationPath,
-        '-t',
-        templatePath,
-        '-c',
-        classId,
-        '-o',
-        `data-gen-hub/${classId}/students/output`,
-        ...(studentIds?.length ? ['-si', studentIds.join(',')] : []),
-      ]);
+      const output = await this.pythonScriptService.runPythonScript(
+        OfficePathScript.DB_TO_LIST,
+        [
+          '-s',
+          specificationPath,
+          '-t',
+          templatePath,
+          '-c',
+          classId,
+          '-o',
+          `data-gen-hub/${classId}/students/output`,
+          ...(studentIds?.length ? ['-si', studentIds.join(',')] : []),
+        ],
+        processId,
+      );
       Logger.verbose(output, 'ExcelStrategy.exportListByScript');
     } catch (error) {
       throw new Error(`Error exporting list by script: ${error.message}`);
@@ -464,26 +467,31 @@ export class ExcelStrategy implements OfficeStrategy {
     specificationPath: string,
     thesisType: ThesisDocumentEnum,
     extraData?: any,
+    processId?: string,
   ): Promise<void> {
     try {
       Logger.verbose(
         `Exporting single by script with template ${templatePath} and specification ${specificationPath}`,
         'ExcelStrategy.exportSingleByScript',
       );
-      const output = await this.pythonScriptService.runPythonScript(OfficePathScript.DB_TO_EXCEL, [
-        '-s',
-        specificationPath,
-        '-t',
-        templatePath,
-        '-c',
-        classId,
-        '-o',
-        `data-gen-hub/${classId}/${thesisType}/output`,
-        ...(extraData ? ['-e', JSON.stringify(extraData)] : []),
-        '-b',
-        thesisType,
-        ...(studentIds?.length ? ['-si', studentIds.join(',')] : []),
-      ]);
+      const output = await this.pythonScriptService.runPythonScript(
+        OfficePathScript.DB_TO_EXCEL,
+        [
+          '-s',
+          specificationPath,
+          '-t',
+          templatePath,
+          '-c',
+          classId,
+          '-o',
+          `data-gen-hub/${classId}/${thesisType}/output`,
+          ...(extraData ? ['-e', JSON.stringify(extraData)] : []),
+          '-b',
+          thesisType,
+          ...(studentIds?.length ? ['-si', studentIds.join(',')] : []),
+        ],
+        processId,
+      );
       Logger.verbose(output, 'ExcelStrategy.exportSingleByScript');
     } catch (error) {
       throw new Error(`Error exporting single by script: ${error.message}`);
@@ -493,20 +501,18 @@ export class ExcelStrategy implements OfficeStrategy {
     inputPath: string,
     specificationPath: string,
     classId: string,
+    processId?: string,
   ): Promise<void> {
     try {
       Logger.verbose(
         `Importing single by script with input ${inputPath} and specification ${specificationPath}`,
         'ExcelStrategy.importSingleByScript',
       );
-      const output = await this.pythonScriptService.runPythonScript(OfficePathScript.EXCEL_TO_DB, [
-        '-s',
-        specificationPath,
-        '-t',
-        inputPath,
-        '-c',
-        classId,
-      ]);
+      const output = await this.pythonScriptService.runPythonScript(
+        OfficePathScript.EXCEL_TO_DB,
+        ['-s', specificationPath, '-t', inputPath, '-c', classId],
+        processId,
+      );
       Logger.verbose(output, 'ExcelStrategy.importSingleByScript');
     } catch (error) {
       throw new Error(`Error importing single by script: ${error.message}`);

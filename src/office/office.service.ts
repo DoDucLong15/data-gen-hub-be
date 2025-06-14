@@ -219,10 +219,11 @@ export class OfficeService {
     inputPath: string,
     specificationPath: string,
     classId: string,
+    processId?: string,
   ): Promise<void> {
     const fileExt = this.getFileExtension(inputPath);
     const strategy = this.getStrategyByFileExtension(fileExt);
-    return await strategy.importListByScript(inputPath, specificationPath, classId);
+    return await strategy.importListByScript(inputPath, specificationPath, classId, processId);
   }
 
   async exportListByScript(
@@ -230,10 +231,17 @@ export class OfficeService {
     studentIds: string[],
     templatePath: string,
     specificationPath: string,
+    processId?: string,
   ): Promise<void> {
     const fileExt = this.getFileExtension(templatePath);
     const strategy = this.getStrategyByFileExtension(fileExt);
-    return await strategy.exportListByScript(classId, studentIds, templatePath, specificationPath);
+    return await strategy.exportListByScript(
+      classId,
+      studentIds,
+      templatePath,
+      specificationPath,
+      processId,
+    );
   }
 
   async exportSingleByScript(
@@ -243,6 +251,7 @@ export class OfficeService {
     specificationPath: string,
     thesisType: ThesisDocumentEnum,
     extraData?: any,
+    processId?: string,
   ): Promise<void> {
     const fileExt = this.getFileExtension(templatePath);
     const strategy = this.getStrategyByFileExtension(fileExt);
@@ -253,6 +262,7 @@ export class OfficeService {
       specificationPath,
       thesisType,
       extraData,
+      processId,
     );
   }
 
@@ -260,9 +270,10 @@ export class OfficeService {
     inputPath: string,
     specificationPath: string,
     classId: string,
+    processId?: string,
   ): Promise<void> {
     const fileExt = this.getFileExtension(inputPath);
     const strategy = this.getStrategyByFileExtension(fileExt);
-    return await strategy.importSingleByScript(inputPath, specificationPath, classId);
+    return await strategy.importSingleByScript(inputPath, specificationPath, classId, processId);
   }
 }
