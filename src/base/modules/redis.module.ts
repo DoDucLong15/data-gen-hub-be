@@ -12,6 +12,9 @@ import Redis from 'ioredis';
         return new Redis({
           host: configService.get<string>('redis.host'),
           port: configService.get<number>('redis.port'),
+          ...(configService.get<string>('redis.password') && {
+            password: configService.get<string>('redis.password'),
+          }),
           connectTimeout: 10000,
           commandTimeout: 5000,
           maxRetriesPerRequest: 3,
