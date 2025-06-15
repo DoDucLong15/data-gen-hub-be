@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
 import { GetProgressDto } from './dtos/progress.dto';
 import { CommonUtils } from 'src/utils/common.util';
-import { In } from 'typeorm';
+import { In, Raw } from 'typeorm';
 import { User } from 'src/auth/decorators/user.decorator';
 import { UserPayload } from 'src/auth/types/user-playload.type';
 import { PoliciesGuard } from 'src/authorization/guards/policies.guard';
@@ -38,9 +38,7 @@ export class ProgressController {
         },
         ...query.classIds.map((classId) => ({
           ...whereCondition,
-          config: {
-            [classId]: true,
-          },
+          config: Raw((alias) => `${alias} @> '${JSON.stringify({ [classId]: true })}'`),
         })),
       ];
     }
