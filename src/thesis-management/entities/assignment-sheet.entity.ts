@@ -28,6 +28,9 @@ export class AssignmentSheetsEntity extends AbstractAuditingEntity {
   @Column({ type: 'varchar', name: 'class_code', nullable: true })
   classCode: string;
 
+  @Column({ type: 'varchar', name: 'field_of_expertise', nullable: true })
+  fieldOfExpertise: string;
+
   @Column({ type: 'varchar', name: 'input_path', nullable: true })
   inputPath: string | null;
 

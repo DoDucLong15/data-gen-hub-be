@@ -97,6 +97,10 @@ export class CreateAssignmentSheetDto {
   @IsNotEmpty()
   @IsEnum(ThesisDocumentEnum)
   thesisDocType: ThesisDocumentEnum;
+
+  @IsOptional()
+  @IsString()
+  fieldOfExpertise: string;
 }
 
 export class UpdateAssignmentSheetDto extends PartialType(CreateAssignmentSheetDto) {
